@@ -21,14 +21,15 @@ def new_device_commissioning_section() -> EDSSection:
         section[key] = DEVICE_COMMISSIONING[key].default
 
 
-
 class EDS:
     def __init__(self):
+        self._is_dcf = False
         self._data = {}
         self._file_path = None
 
     def load(self, file_path: str) -> list:
 
+        self._is_dcf = file_path.endswith('.dcf')
         self._data = {}
         self._file_path = file_path
         errors = []
@@ -79,7 +80,11 @@ class EDS:
             try:
                 section[key] = definition[key].str2value(raw[key])
             except KeyError:
-                if not definition[key].optional:
+                if key == 'Denotation':  # always add this even if not dcf
+                    if self.is_dcf:
+                        errors.append('key "' + key + '" was missing from ' + header)
+                    section[key] = definition[key].default
+                elif not definition[key].optional:
                     errors.append('key "' + key + '" was missing from ' + header)
                     section[key] = definition[key].default
             except ValueError:
@@ -140,13 +145,13 @@ class EDS:
 
                 lines.append('')
 
-                lines += self._save_objects(objects)
+                lines += self._save_objects(objects, dcf)
 
         with open(file_path, 'w') as f:
             for i in lines:
                 f.write(i + '\n')
 
-    def _save_objects(self, objects: list) -> list:
+    def _save_objects(self, objects: list, dcf: bool) -> list:
         lines = []
 
         for i in objects:
@@ -155,6 +160,8 @@ class EDS:
             name = section.header[1:-1]
 
             for key in self._data[name]:
+                if key == 'Denotation' and dcf is False:
+                    continue  # Denotation is for DCF only
                 if self._data[name]['ObjectType'] == ObjectType.VAR:
                     value = VAR[key].value2str(self._data[name][key])
                 else:
@@ -169,6 +176,8 @@ class EDS:
                 name = section.header[1:-1]
 
                 for key in self._data[name]:
+                    if key == 'Denotation' and dcf is False:
+                        continue  # Denotation is for DCF only
                     value = VAR[key].value2str(self._data[name][key])
                     lines.append(key + '=' + value)
 
@@ -256,6 +265,7 @@ class EDS:
                 raise ValueError('unknown key "' + i + '"')
 
         self._data['DeviceComissioning'] = section
+        self._is_dcf = True
 
     def indexes(self) -> list:
         indexes = []
@@ -369,3 +379,7 @@ class EDS:
 
     def remove_subindex(self, name: str):
         pass
+
+    @property
+    def is_dcf(self):
+        return self._is_dcf

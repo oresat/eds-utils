@@ -245,12 +245,13 @@ class AppWindow(Gtk.ApplicationWindow):
         self.lss_support.set_state(device_info['LSS_Supported'])
 
         device_info = self.eds.device_commissioning
-        self.node_name.set_text(device_info['NodeName'])
-        self.node_id.set_value(device_info['NodeID'])
-        self.net_name.set_text(device_info['NetName'])
-        self.network_name.set_value(device_info['NetworkName'])
-        self.canopen_manager.get_state(device_info['CANopenManager'])
-        self.lss_serial_number.get_value(device_info['LSS_SerialNumber'])
+        if device_info:
+            self.node_name.set_text(device_info['NodeName'])
+            self.node_id.set_value(device_info['NodeID'])
+            self.net_name.set_text(device_info['NetName'])
+            self.network_name.set_value(device_info['NetworkName'])
+            self.canopen_manager.get_state(device_info['CANopenManager'])
+            self.lss_serial_number.get_value(device_info['LSS_SerialNumber'])
 
-    def save(self):
-        self.eds.save()
+    def save(self, file_path: str = None):
+        self.eds.save(file_path)

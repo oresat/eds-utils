@@ -191,11 +191,13 @@ DUMMY_USAGE = {
 RECORD_ARRAY = {
     'SubNumber': EDSString(),
     'ParameterName': EDSString(max_length=241),
+    'Denotation': EDSString(),
     'ObjectType': EDSObjectType(),
 }
 
 VAR = {
     'ParameterName': EDSString(max_length=241),
+    'Denotation': EDSString(),
     'ObjectType': EDSObjectType(),
     'DataType': EDSDataType(),
     'LowLimit': EDSString(optional=True),

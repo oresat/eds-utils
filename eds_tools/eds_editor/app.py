@@ -105,14 +105,6 @@ class App(Gtk.Application):
         self.window.present()
 
     def do_command_line(self, command_line):
-        options = command_line.get_options_dict()
-        # convert GVariantDict -> GVariant -> dict
-        options = options.end().unpack()
-
-        if 'test' in options:
-            # This is printed on the main instance
-            print('Test argument recieved: %s' % options['test'])
-
         self.activate()
         return 0
 
@@ -130,11 +122,7 @@ class App(Gtk.Application):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             file_path = dialog.get_filename()
-            print('Open clicked')
             self.window.open_file(file_path)
-            print('File selected: ' + file_path)
-        elif response == Gtk.ResponseType.CANCEL:
-            print('Cancel clicked')
 
         dialog.destroy()
 
@@ -152,10 +140,6 @@ class App(Gtk.Application):
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             file_path = dialog.get_filename()
-            print('Save clicked')
-            print('File selected: ' + file_path)
-        elif response == Gtk.ResponseType.CANCEL:
-            print('Cancel clicked')
 
         dialog.destroy()
 
