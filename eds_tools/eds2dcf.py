@@ -1,6 +1,7 @@
 import sys
 import argparse
 
+from .core import str2int
 from .core.eds import EDS, EDSSection
 
 EDS2DCF_DESCRIPTION = 'EDS to DCF CLI tool'
@@ -13,7 +14,7 @@ def eds2dcf(sys_args=None):
     name = 'eds2dcf'
     parser = argparse.ArgumentParser(description=EDS2DCF_DESCRIPTION, prog=name)
     parser.add_argument('filepath', metavar='FILEPATH', help='filepath to EDS file')
-    parser.add_argument('node_id', type=int, help='set the node ID')
+    parser.add_argument('node_id', help='set the node ID')
     parser.add_argument('node_name', help='set the node name')
     parser.add_argument('-b', '--baud-rate', type=int, default=1000,
                         help='set the baud rate (in kbps)')
@@ -31,7 +32,7 @@ def eds2dcf(sys_args=None):
 
     section = EDSSection()
     section.header = '[DeviceComissioning]'
-    section['NodeID'] = args.node_id
+    section['NodeID'] = str2int(args.node_id)
     section['NodeName'] = args.node_name
     section['Baudrate'] = args.baud_rate
     section['NetNumber'] = args.net_number
