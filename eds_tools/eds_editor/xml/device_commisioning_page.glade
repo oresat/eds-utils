@@ -14,6 +14,8 @@
           <object class="GtkFrame">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
+            <property name="halign">start</property>
+            <property name="valign">start</property>
             <property name="margin-start">5</property>
             <property name="margin-end">5</property>
             <property name="margin-top">5</property>
@@ -36,8 +38,6 @@
                     <property name="margin-bottom">5</property>
                     <property name="row-spacing">5</property>
                     <property name="column-spacing">5</property>
-                    <property name="row-homogeneous">True</property>
-                    <property name="column-homogeneous">True</property>
                     <child>
                       <object class="GtkLabel">
                         <property name="visible">True</property>
