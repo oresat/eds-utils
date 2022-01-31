@@ -374,11 +374,24 @@ class EDS:
             key = hex(index)[2:] + 'sub' + hex(size + 1)[2:]
             self._data[key] = eds_section
 
-    def remove_index(self, name: str):
-        pass
+    def remove_index(self, index: int):
+        name = hex(index)[2:]
 
-    def remove_subindex(self, name: str):
-        pass
+        if name in self._data:
+            if self._data[name]['ObjectType'] != ObjectType.VAR:  # delete all the subindexes
+                for i in self.subindexes():
+                    del self._data[i[2:]]
+            del self._data[name]
+
+    def remove_subindex(self, index: int, subindex: int):
+        name = hex(index)[2:]
+        sub_name = hex(index)[2:] + 'sub' + hex(subindex)[2:]
+        del self._data[sub_name]
+
+        # decress the subindex count for the reocord/array
+        temp = str2int(self._data[name]['DefaultValue'])
+        temp -= 12
+        self._data[name]['DefaultValue'] = hex(temp)
 
     @property
     def is_dcf(self):
