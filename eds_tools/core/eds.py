@@ -396,3 +396,8 @@ class EDS:
     @property
     def is_dcf(self):
         return self._is_dcf
+
+    def update_object(self, obj: EDSSection):
+        pass
+
+

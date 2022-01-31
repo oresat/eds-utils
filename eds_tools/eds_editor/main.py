@@ -3,7 +3,7 @@ import argparse
 
 from .app import App
 
-EDS_EDITOR_DESCRIPTION = 'GUI to edit EDS files.',
+EDS_EDITOR_DESCRIPTION = 'GUI to edit EDS files.'
 
 
 def eds_editor(sys_args=None):

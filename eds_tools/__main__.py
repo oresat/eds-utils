@@ -1,6 +1,6 @@
 import sys
 
-from . import APP_VERSION
+from . import __version__
 from .validate_eds import validate_eds, VALIDATE_EDS_DESCRIPTION
 from .eds_editor.main import eds_editor, EDS_EDITOR_DESCRIPTION
 from .eds2dcf import eds2dcf, EDS2DCF_DESCRIPTION
@@ -15,7 +15,7 @@ PROGRAMS = {
 
 def eds_tools():
     print('')
-    print('eds-tools v' + APP_VERSION)
+    print('eds-tools v' + __version__)
     print('')
 
     print('command : description')
