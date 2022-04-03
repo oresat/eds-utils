@@ -57,6 +57,9 @@ class EDS:
         for i in lines[:header_index]:
             section.comment += i[1:] + '\n'
 
+        # remove trailing '\n'
+        section.comment = section.comment[:-1]
+
         # read in all seciton keys/values
         raw = {}
         for i in lines[header_index + 1:]:
