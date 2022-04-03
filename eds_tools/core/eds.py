@@ -28,6 +28,7 @@ class EDS:
         self._file_path = None
 
     def load(self, file_path: str) -> list:
+        '''load an eds/dcf file'''
 
         self._is_dcf = file_path.endswith('.dcf')
         self._data = {}
@@ -104,6 +105,7 @@ class EDS:
         return errors
 
     def save(self, file_path: str = None, dcf: bool = False):
+        '''Save the eds/dcf file'''
         lines = []
 
         if not file_path:
@@ -187,14 +189,17 @@ class EDS:
 
     @property
     def file_info(self) -> EDSSection:
+        '''Get the file info section of the eds'''
         return self._data['FileInfo'].copy()
 
     @property
     def device_info(self) -> EDSSection:
+        '''Get the device info section of the eds'''
         return self._data['DeviceInfo'].copy()
 
     @property
     def mandatory_objects(self) -> list:
+        '''Get the list of all mandatory objects in OD'''
         mandatory_objects = []
 
         for i in MANDATORY_OBJECTS:
@@ -205,6 +210,7 @@ class EDS:
 
     @property
     def optional_objects(self) -> list:
+        '''Get the list of all optional objects in OD'''
         optional_objects = []
 
         for i in self._data:
@@ -223,6 +229,7 @@ class EDS:
 
     @property
     def manufacturer_objects(self) -> list:
+        '''Get the list of all manufacturer objects in OD'''
         manufacturer_objects = []
 
         for i in self._data:
@@ -241,6 +248,7 @@ class EDS:
 
     @property
     def device_commissioning(self) -> EDSSection:
+        '''EDSSection: Get the section for device commissioning (DCF only)'''
         data = None
 
         if 'DeviceComissioning' in self._data:
@@ -250,6 +258,7 @@ class EDS:
 
     @device_commissioning.setter
     def device_commissioning(self, section: EDSSection):
+        '''Set the section for device commissioning (DCF only)'''
         if section.header != '[DeviceComissioning]':
             raise ValueError('device commissioning header not "[DeviceComissioning]"')
 
@@ -268,15 +277,18 @@ class EDS:
         self._is_dcf = True
 
     def indexes(self) -> list:
+        '''Get the list of indexes'''
         indexes = []
 
         for i in self._data:
             if re.match(INDEX_REGEX, i):
-                indexes.append('0x' + i)
+                indexes.append(int(i, 16))
 
-        return indexes
+        # sort the indexes before returning
+        return [f'0x{i:X}' for i in sorted(indexes)]
 
     def subindexes(self, index: str) -> list:
+        '''Get the list of subindexes for an index'''
         subindexes = []
 
         temp = index[2:] + 'sub'
@@ -288,16 +300,19 @@ class EDS:
         return subindexes
 
     def index(self, index: str) -> EDSSection:
+        '''Get a copy of the section data at an index'''
         key = index[2:]
         data = self._data[key].copy()
         return data
 
     def subindex(self, index: str, subindex: str) -> EDSSection:
+        '''Get a copy of the section data at an subindex'''
         key = index[2:] + 'sub' + subindex[2:]
         data = self._data[key].copy()
         return data
 
     def add_variable_index(self, index: int):
+        '''Add a new VAR index to OD'''
         key = hex(index)[2:]
         if key in self._data:
             raise ValueError('Index already exist')
@@ -308,6 +323,7 @@ class EDS:
         self._data[key] = eds_section
 
     def add_variable_subindex(self, index: int, subindex: int):
+        '''Add a new subindex to OD'''
         key = hex(index)[2:] + 'sub' + hex(subindex)[2:]
         if key in self._data:
             raise ValueError('Subindex already exist')
@@ -318,6 +334,7 @@ class EDS:
         self._data[key] = eds_section
 
     def add_record(self, index: int):
+        '''Add a new record to OD'''
         key = hex(index)[2:]
         if key in self._data:
             raise ValueError('Index already exist')
@@ -341,6 +358,7 @@ class EDS:
         self._data[key] = eds_section
 
     def add_array(self, index: int, size: int, data_type: DataType):
+        '''Add a new array to OD'''
         key = hex(index)[2:]
         if key in self._data:
             raise ValueError('Index already exist')
@@ -375,6 +393,7 @@ class EDS:
             self._data[key] = eds_section
 
     def remove_index(self, index: int):
+        '''Remove a index from the OD'''
         name = hex(index)[2:]
 
         if name in self._data:
@@ -384,6 +403,7 @@ class EDS:
             del self._data[name]
 
     def remove_subindex(self, index: int, subindex: int):
+        '''Remove a subindex from the OD'''
         name = hex(index)[2:]
         sub_name = hex(index)[2:] + 'sub' + hex(subindex)[2:]
         del self._data[sub_name]
@@ -395,7 +415,9 @@ class EDS:
 
     @property
     def is_dcf(self):
+        '''Check if the file that was loaded is a dcf or not'''
         return self._is_dcf
 
     def update_object(self, obj: EDSSection):
+        '''update a object in the OD'''
         pass
