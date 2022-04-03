@@ -399,5 +399,3 @@ class EDS:
 
     def update_object(self, obj: EDSSection):
         pass
-
-

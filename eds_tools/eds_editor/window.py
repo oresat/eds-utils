@@ -178,10 +178,10 @@ class AppWindow(Gtk.ApplicationWindow):
             subindex = model[treeiter][1]
             self.selected_obj = self.eds.subindex(index, subindex)
 
-        print(self.selected_obj)
         self.obj_parameter_name.set_text(self.selected_obj['ParameterName'])
         obj_type = self.selected_obj['ObjectType']
         self.obj_type.set_active(list(ObjectType).index(obj_type))
+        self.obj_comment.get_buffer().set_text(self.selected_obj.comment)
         if obj_type == ObjectType.VAR:
             data_type = self.selected_obj['DataType']
             self.obj_data_type.set_active(list(DataType).index(data_type))
@@ -244,14 +244,14 @@ class AppWindow(Gtk.ApplicationWindow):
         self.group_messaging.set_state(device_info['GroupMessaging'])
         self.lss_support.set_state(device_info['LSS_Supported'])
 
-        device_info = self.eds.device_commissioning
-        if device_info:
-            self.node_name.set_text(device_info['NodeName'])
-            self.node_id.set_value(device_info['NodeID'])
-            self.net_name.set_text(device_info['NetName'])
-            self.network_name.set_value(device_info['NetworkName'])
-            self.canopen_manager.get_state(device_info['CANopenManager'])
-            self.lss_serial_number.get_value(device_info['LSS_SerialNumber'])
+        device_comm = self.eds.device_commissioning
+        if device_comm:
+            self.node_name.set_text(device_comm['NodeName'])
+            self.node_id.set_value(device_comm['NodeID'])
+            self.net_name.set_text(device_comm['NetName'])
+            self.network_name.set_value(device_comm['NetworkName'])
+            self.canopen_manager.get_state(device_comm['CANopenManager'])
+            self.lss_serial_number.get_value(device_comm['LSS_SerialNumber'])
 
     def save(self, file_path: str = None):
         self.eds.save(file_path)
