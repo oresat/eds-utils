@@ -74,7 +74,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         # object dictionary page
         builder.add_from_file(path + '/xml/object_dictionary_page.glade')
-        page = builder.get_object('object_dictionary_page')
+        page = builder.get_object('od_page')
         self.notebook.append_page(page, Gtk.Label.new('Object Dictionary'))
         self.od_treeview = builder.get_object('object_dictionary_tree')
         self.indexes_store = Gtk.TreeStore(str, str, str)
