@@ -4,7 +4,7 @@ from collections import UserDict
 
 from . import ObjectType, str2int, DataType
 from .eds_format import INDEX_REGEX, SUBINDEX_REGEX, VAR, RECORD_ARRAY, LIST_OBJECTS, COMMENTS, \
-    EDS_SECTION_ORDER, MANDATORY_OBJECTS, DEVICE_COMMISSIONING
+    EDS_SECTION_ORDER, MANDATORY_OBJECTS, DEVICE_COMMISSIONING, FILE_INFO, DEVICE_INFO
 
 
 class EDSSection(UserDict):
@@ -161,6 +161,9 @@ class EDS:
 
         for i in objects:
             section = self.index(i)
+            if section.comment:
+                for c in section.comment.split('\n'):
+                    lines.append(f';{c}')
             lines.append(section.header)
             name = section.header[1:-1]
 
@@ -177,6 +180,9 @@ class EDS:
 
             for j in self.subindexes(i):
                 section = self.subindex(i, j)
+                if section.comment:
+                    for c in section.comment.split('\n'):
+                        lines.append(f';{c}')
                 lines.append(section.header)
                 name = section.header[1:-1]
 
@@ -190,15 +196,41 @@ class EDS:
 
         return lines
 
+    def _is_valid_section(self, section: EDSSection, header: str, definition: dict) -> bool:
+        if section.header != header:
+            raise ValueError(f'device commissioning header not "{header}"')
+
+        for i in definition:
+            if i not in section:
+                raise ValueError(f'missing key "{i}"')
+            if not definition[i].is_valid(section[i]):
+                raise TypeError(f'invalid type for key "{i}"')
+
+        for i in section:
+            if i not in definition:
+                raise ValueError(f'unknown key "{i}"')
+
     @property
     def file_info(self) -> EDSSection:
-        '''Get the file info section of the eds'''
+        '''Get the section for file info'''
         return self._data['FileInfo'].copy()
+
+    @file_info.setter
+    def file_info(self, section: EDSSection):
+        '''Set the section for file info'''
+        self._is_valid_section(section, '[FileInfo]', FILE_INFO)
+        self._data['FileInfo'] = section
 
     @property
     def device_info(self) -> EDSSection:
         '''Get the device info section of the eds'''
         return self._data['DeviceInfo'].copy()
+
+    @device_info.setter
+    def device_info(self, section: EDSSection):
+        '''Set the section for device info'''
+        self._is_valid_section(section, '[DeviceInfo]', DEVICE_INFO)
+        self._data['DeviceInfo'] = section
 
     @property
     def mandatory_objects(self) -> list:
@@ -262,20 +294,7 @@ class EDS:
     @device_commissioning.setter
     def device_commissioning(self, section: EDSSection):
         '''Set the section for device commissioning (DCF only)'''
-        if section.header != '[DeviceComissioning]':
-            raise ValueError('device commissioning header not "[DeviceComissioning]"')
-
-        definition = DEVICE_COMMISSIONING
-        for i in definition:
-            if i not in section:
-                raise ValueError('missing key "' + i + '"')
-            if not definition[i].is_valid(section[i]):
-                raise ValueError('invalid value for key "' + i + '"')
-
-        for i in section:
-            if i not in definition:
-                raise ValueError('unknown key "' + i + '"')
-
+        self._is_valid_section(section, '[DeviceComissioning]', DEVICE_COMMISSIONING)
         self._data['DeviceComissioning'] = section
         self._is_dcf = True
 

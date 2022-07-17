@@ -33,7 +33,8 @@ class EDSString(EDSValue):
         self.regex_format = regex_format
 
     def is_valid(self, value: str) -> bool:
-        if (not self.regex_format or re.match(self.regex_format, value)) and \
+        if type(value) is not str or \
+                (not self.regex_format or re.match(self.regex_format, value)) and \
                 (self.max_length == 0 or len(value) <= self.max_length):
             return True
         return False
@@ -62,7 +63,8 @@ class EDSInt(EDSValue):
         return str(value)
 
     def is_valid(self, value: int) -> bool:
-        if (not self.min and value < self.min) or (not self.max and value > self.max):
+        if type(value) is not int or \
+                (not self.min and value < self.min) or (not self.max and value > self.max):
             return False
         return True
 
@@ -77,6 +79,11 @@ class EDSBool(EDSValue):
     def value2str(self, value: bool) -> str:
         return str(int(value))
 
+    def is_valid(self, value: bool) -> bool:
+        if type(value) is not bool:
+            return False
+        return True
+
 
 class EDSObjectType(EDSValue):
     def __init__(self, description='', default=ObjectType.VAR, optional=False):
@@ -88,6 +95,11 @@ class EDSObjectType(EDSValue):
     def value2str(self, value: ObjectType) -> str:
         return hex(value.value)
 
+    def is_valid(self, value: ObjectType) -> bool:
+        if type(value) is not ObjectType:
+            return False
+        return True
+
 
 class EDSDataType(EDSValue):
     def __init__(self, description='', default=DataType.INTEGER32, optional=False):
@@ -98,6 +110,11 @@ class EDSDataType(EDSValue):
 
     def value2str(self, value: DataType) -> str:
         return '0x{0:0{1}X}'.format(value.value, 4)  # 0xABCD format (4 digits)
+
+    def is_valid(self, value: DataType) -> bool:
+        if type(value) is not DataType:
+            return False
+        return True
 
 
 FILE_INFO = {
