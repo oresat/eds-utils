@@ -1,66 +1,98 @@
-from os.path import abspath, dirname
-
 from gi.repository import Gtk
 
 from ..core.eds import EDS
 
 
-class DeviceCommissioningPage:
-    def __init__(self):
+class DeviceCommissioningPage(Gtk.ScrolledWindow):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.eds = None
-        self.file_path = None
 
-        builder = Gtk.Builder()
+        frame = Gtk.Frame(label='Device Commissioning', margin_top=5, margin_bottom=5,
+                          margin_start=5, margin_end=5)
+        frame.set_halign(Gtk.Align.START)
+        frame.set_valign(Gtk.Align.START)
+        self.set_child(frame)
 
-        path = dirname(abspath(__file__))
-        builder.add_from_file(path + '/xml/device_commissioning_page.glade')
-        self.page = builder.get_object('device_commissioning_page')
+        grid = Gtk.Grid(column_spacing=5, row_spacing=5, margin_top=5, margin_bottom=5,
+                        margin_start=5, margin_end=5)
+        frame.set_child(grid)
 
-        self.node_name = builder.get_object('node_name')
+        label = Gtk.Label.new('Node Name:')
+        label.set_halign(Gtk.Align.START)
+        self.node_name = Gtk.Entry()
+        grid.attach(label, column=0, row=0, width=1, height=1)
+        grid.attach(self.node_name, column=1, row=0, width=2, height=1)
 
-        node_id = builder.get_object('node_id')
+        label = Gtk.Label.new('Network Name:')
+        label.set_halign(Gtk.Align.START)
+        self.network_name = Gtk.Entry()
+        grid.attach(label, column=0, row=1, width=1, height=1)
+        grid.attach(self.network_name, column=1, row=1, width=2, height=1)
+
+        label = Gtk.Label.new('Node ID:')
+        label.set_halign(Gtk.Align.START)
+        node_id = Gtk.SpinButton()
         self.node_id = Gtk.Adjustment.new(1, 1, 0xFF, 1, 0, 0)
         node_id.set_adjustment(self.node_id)
+        grid.attach(label, column=3, row=0, width=1, height=1)
+        grid.attach(node_id, column=4, row=0, width=1, height=1)
 
-        self.network_name = builder.get_object('network_name')
-
-        net_number = builder.get_object('net_number')
+        label = Gtk.Label.new('Net Number:')
+        label.set_halign(Gtk.Align.START)
+        net_number = Gtk.SpinButton()
         self.net_number = Gtk.Adjustment.new(0, 0, 0xFFFFFFFF, 1, 0, 0)
         net_number.set_adjustment(self.net_number)
+        grid.attach(label, column=3, row=1, width=1, height=1)
+        grid.attach(net_number, column=4, row=1, width=1, height=1)
 
-        # baud rate
-        dc_10_kbps = builder.get_object('dc_10_kbps')
-        dc_10_kbps.connect('toggled', self.on_dc_kbps_selected)
-        dc_20_kbps = builder.get_object('dc_20_kbps')
-        dc_20_kbps.connect('toggled', self.on_dc_kbps_selected)
-        dc_50_kbps = builder.get_object('dc_50_kbps')
-        dc_50_kbps.connect('toggled', self.on_dc_kbps_selected)
-        dc_125_kbps = builder.get_object('dc_125_kbps')
-        dc_125_kbps.connect('toggled', self.on_dc_kbps_selected)
-        dc_250_kbps = builder.get_object('dc_250_kbps')
-        dc_250_kbps.connect('toggled', self.on_dc_kbps_selected)
-        dc_500_kbps = builder.get_object('dc_500_kbps')
-        dc_500_kbps.connect('toggled', self.on_dc_kbps_selected)
-        dc_800_kbps = builder.get_object('dc_800_kbps')
-        dc_800_kbps.connect('toggled', self.on_dc_kbps_selected)
-        dc_1000_kbps = builder.get_object('dc_1000_kbps')
-        dc_1000_kbps.connect('toggled', self.on_dc_kbps_selected)
+        label = Gtk.Label.new('Baud Rate:')
+        label.set_halign(Gtk.Align.START)
+        grid.attach(label, column=0, row=2, width=1, height=2)
+        baud_rates = [
+            '10 kpbs',
+            '20 kpbs',
+            '50 kpbs',
+            '125 kpbs',
+            '250 kpbs',
+            '500 kpbs',
+            '800 kpbs',
+            '100 kpbs',
+        ]
+        first_radio_button = None
+        for i in range(len(baud_rates)):
+            radio_button = Gtk.CheckButton.new()
+            radio_button.set_label(baud_rates[i])
 
-        lss_serial_number = builder.get_object('lss_serial_number')
+            if first_radio_button is None:  # set the first_radio_button var
+                first_radio_button = radio_button
+            else:
+                radio_button.set_group(first_radio_button)
+
+            radio_button.connect('toggled', self.on_dc_kbps_selected)
+            column = i % 4  # 0 - 3
+            row = i // 4  # 0 or 1
+            grid.attach(radio_button, column=1 + column, row=2 + row, width=1, height=1)
+
+        label = Gtk.Label.new('LSS Serial Number:')
+        label.set_halign(Gtk.Align.START)
+        lss_serial_number = Gtk.SpinButton()
         self.lss_serial_number = Gtk.Adjustment.new(0, 0, 0xFFFFFFFF, 1, 0, 0)
         lss_serial_number.set_adjustment(self.lss_serial_number)
+        grid.attach(label, column=0, row=4, width=1, height=1)
+        grid.attach(lss_serial_number, column=1, row=4, width=1, height=1)
 
-        self.canopen_manager = builder.get_object('canopen_manager')
+        label = Gtk.Label.new('CANopen Manager:')
+        label.set_halign(Gtk.Align.START)
+        self.canopen_manager = Gtk.Switch()
+        self.canopen_manager.set_halign(Gtk.Align.START)
+        self.canopen_manager.set_valign(Gtk.Align.CENTER)
+        grid.attach(label, column=2, row=4, width=1, height=1)
+        grid.attach(self.canopen_manager, column=3, row=4, width=1, height=1)
 
     def on_dc_kbps_selected(self, widget, data=None):
         print(widget.get_label() + ' is selected')
-
-    def on_update_button_clicked(self, button):
-        print('update page', self.page_focus)
-
-    def on_cancel_button_clicked(self, button):
-        print('cancel page', self.page_focus)
 
     def load_eds(self, eds: EDS):
         self.eds = eds
