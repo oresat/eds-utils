@@ -122,13 +122,13 @@ FILE_INFO = {
     'FileVersion': EDSInt(min_value=0, max_value=255),
     'FileRevision': EDSInt(min_value=0, max_value=255),
     'EDSVersion': EDSString(
-        description='the version of EDS in  X.Y format',
+        description='The version of EDS in  X.Y format',
         default='4.0',
         optional=True,
         regex_format=r'^\d\.\d$'
     ),
     'Description': EDSString(
-        description='file description',
+        description='File description',
         max_length=243
     ),
     'CreationTime': EDSString(
@@ -143,12 +143,12 @@ FILE_INFO = {
     ),
     'CreatedBy': EDSString(max_length=245),
     'ModificationTime': EDSString(
-        description='Time when the file was made in hh:mm(AM|PM) format',
+        description='Time when the file was last modified in hh:mm(AM|PM) format',
         default=datetime.now().strftime('%I:%M%p'),
         regex_format=r'^([0-1]\d):([0-5]\d)(AM|PM)$'
     ),
     'ModificationDate': EDSString(
-        description='Date when the file was made in dd-mm-yyyy format',
+        description='Date when the file was last modified in dd-mm-yyyy format',
         default=datetime.now().strftime('%m-%d-%Y'),
         regex_format=r'^(\d\d)-(\d\d)-(\d\d\d\d)$'
     ),
@@ -161,19 +161,19 @@ DEVICE_INFO = {
     'ProductName': EDSString(max_length=243),
     'ProductNumber': EDSInt(min_value=0, max_value=0xFFFFFFFF),
     'RevisionNumber': EDSInt(min_value=0, max_value=0xFFFFFFFF),
-    'OrderCode': EDSString(description='order code for this product', max_length=245),
-    'BaudRate_10': EDSBool(description='Supports baud rate of 20', default=True),
-    'BaudRate_20': EDSBool(description='Supports baud rate of 20', default=True),
-    'BaudRate_50': EDSBool(description='Supports baud rate of 50', default=True),
-    'BaudRate_125': EDSBool(description='Supports baud rate of 125', default=True),
-    'BaudRate_250': EDSBool(description='Supports baud rate of 250', default=True),
-    'BaudRate_500': EDSBool(description='Supports baud rate of 500', default=True),
-    'BaudRate_800': EDSBool(description='Supports baud rate of 800', default=True),
-    'BaudRate_1000': EDSBool(description='Supports baud rate of 1000', default=True),
+    'OrderCode': EDSString(description='Order code for this product', max_length=245),
+    'BaudRate_10': EDSBool(description='Supports baud rate of 20 kpbs', default=True),
+    'BaudRate_20': EDSBool(description='Supports baud rate of 20 kpbs', default=True),
+    'BaudRate_50': EDSBool(description='Supports baud rate of 50 kpbs', default=True),
+    'BaudRate_125': EDSBool(description='Supports baud rate of 125 kpbs', default=True),
+    'BaudRate_250': EDSBool(description='Supports baud rate of 250 kpbs', default=True),
+    'BaudRate_500': EDSBool(description='Supports baud rate of 500 kpbs', default=True),
+    'BaudRate_800': EDSBool(description='Supports baud rate of 800 kpbs', default=True),
+    'BaudRate_1000': EDSBool(description='Supports baud rate of 1000 kpbs', default=True),
     'SimpleBootUpMaster': EDSBool(),
     'SimpleBootUpSlave': EDSBool(),
     'Granularity': EDSInt(
-        description='granularity of PDO mapping',
+        description='Granularity of PDO mapping',
         default=8,
         min_value=0,
         max_value=64

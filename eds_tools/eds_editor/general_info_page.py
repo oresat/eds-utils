@@ -3,6 +3,7 @@ from datetime import datetime
 from gi.repository import Gtk
 
 from ..core.eds import EDS
+from ..core.eds_format import FILE_INFO, DEVICE_INFO
 
 
 class GeneralInfoPage(Gtk.ScrolledWindow):
@@ -20,14 +21,14 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
         frame.set_valign(Gtk.Align.START)
         box.append(frame)
 
-        grid = Gtk.Grid(column_spacing=5, row_spacing=5,
-                        column_homogeneous=True, row_homogeneous=True,
+        grid = Gtk.Grid(column_spacing=5, row_spacing=5, column_homogeneous=True,
                         margin_top=5, margin_bottom=5, margin_start=5, margin_end=5)
         frame.set_child(grid)
 
         label = Gtk.Label.new('File Name:')
         label.set_halign(Gtk.Align.START)
         self.file_name = Gtk.Entry()
+        self.file_name.set_max_length(FILE_INFO['FileName'].max_length)
         self.file_name.set_sensitive(False)
         grid.attach(label, column=0, row=0, width=1, height=1)
         grid.attach(self.file_name, column=1, row=0, width=3, height=1)
@@ -35,7 +36,8 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('File Version:')
         label.set_halign(Gtk.Align.START)
         file_version = Gtk.SpinButton()
-        self.file_version = Gtk.Adjustment.new(0, 0, 0xFF, 0, 0, 0)
+        self.file_version = Gtk.Adjustment.new(0, FILE_INFO['FileVersion'].min,
+                                               FILE_INFO['FileVersion'].max, 0, 0, 0)
         file_version.set_adjustment(self.file_version)
         grid.attach(label, column=0, row=1, width=1, height=1)
         grid.attach(file_version, column=1, row=1, width=1, height=1)
@@ -43,7 +45,8 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('File Revision:')
         label.set_halign(Gtk.Align.START)
         file_revision = Gtk.SpinButton()
-        self.file_revision = Gtk.Adjustment.new(0, 0, 0xFF, 0, 0, 0)
+        self.file_revision = Gtk.Adjustment.new(0, FILE_INFO['FileRevision'].min,
+                                                FILE_INFO['FileRevision'].max, 0, 0, 0)
         file_revision.set_adjustment(self.file_revision)
         grid.attach(label, column=2, row=1, width=1, height=1)
         grid.attach(file_revision, column=3, row=1, width=1, height=1)
@@ -51,12 +54,14 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Description:')
         label.set_halign(Gtk.Align.START)
         self.description = Gtk.Entry()
+        self.description.set_max_length(FILE_INFO['Description'].max_length)
         grid.attach(label, column=0, row=2, width=1, height=1)
         grid.attach(self.description, column=1, row=2, width=3, height=1)
 
         label = Gtk.Label.new('Creation Datetime:')
         label.set_halign(Gtk.Align.START)
         self.creation_datetime = Gtk.Entry()
+        self.creation_datetime.set_max_length(18)
         self.creation_datetime.set_placeholder_text('mm-dd-yyyy hh:mm(AM|PM)')
         self.creation_datetime.set_sensitive(False)
         grid.attach(label, column=0, row=3, width=1, height=1)
@@ -65,6 +70,7 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Creation By:')
         label.set_halign(Gtk.Align.START)
         self.created_by = Gtk.Entry()
+        self.created_by.set_max_length(FILE_INFO['CreatedBy'].max_length)
         self.created_by.set_sensitive(False)
         grid.attach(label, column=0, row=4, width=1, height=1)
         grid.attach(self.created_by, column=1, row=4, width=2, height=1)
@@ -72,6 +78,7 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Modified Datetime:')
         label.set_halign(Gtk.Align.START)
         self.modification_datetime = Gtk.Entry()
+        self.modification_datetime.set_max_length(18)
         self.modification_datetime.set_placeholder_text('mm-dd-yyyy hh:mm(AM|PM)')
         button = Gtk.Button(label='Now')
         button.set_halign(Gtk.Align.START)
@@ -83,29 +90,31 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Modified By:')
         label.set_halign(Gtk.Align.START)
         self.modified_by = Gtk.Entry()
+        self.modified_by.set_max_length(FILE_INFO['ModifiedBy'].max_length)
         grid.attach(label, column=0, row=6, width=1, height=1)
         grid.attach(self.modified_by, column=1, row=6, width=2, height=1)
 
-        frame = Gtk.Frame(label='File Info', margin_top=5, margin_bottom=5,
+        frame = Gtk.Frame(label='Device Info', margin_top=5, margin_bottom=5,
                           margin_start=5, margin_end=5)
         frame.set_valign(Gtk.Align.START)
         box.append(frame)
 
-        grid = Gtk.Grid(column_spacing=5, row_spacing=5,
-                        column_homogeneous=True, row_homogeneous=True,
+        grid = Gtk.Grid(column_spacing=5, row_spacing=5, column_homogeneous=True,
                         margin_top=5, margin_bottom=5, margin_start=5, margin_end=5)
         frame.set_child(grid)
 
         label = Gtk.Label.new('Vendor Name:')
         label.set_halign(Gtk.Align.START)
         self.vendor_name = Gtk.Entry()
+        self.vendor_name.set_max_length(DEVICE_INFO['VendorName'].max_length)
         grid.attach(label, column=0, row=0, width=1, height=1)
         grid.attach(self.vendor_name, column=1, row=0, width=1, height=1)
 
         label = Gtk.Label.new('Vendor Number:')
         label.set_halign(Gtk.Align.START)
         vendor_number = Gtk.SpinButton()
-        self.vendor_number = Gtk.Adjustment.new(0, 0, 0xFFFFFFFF, 1, 0, 0)
+        self.vendor_number = Gtk.Adjustment.new(0, DEVICE_INFO['VendorNumber'].min,
+                                                DEVICE_INFO['VendorNumber'].max, 1, 0, 0)
         vendor_number.set_adjustment(self.vendor_number)
         grid.attach(label, column=2, row=0, width=1, height=1)
         grid.attach(vendor_number, column=3, row=0, width=1, height=1)
@@ -113,13 +122,15 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Product Name:')
         label.set_halign(Gtk.Align.START)
         self.product_name = Gtk.Entry()
+        self.product_name.set_max_length(DEVICE_INFO['ProductName'].max_length)
         grid.attach(label, column=0, row=1, width=1, height=1)
         grid.attach(self.product_name, column=1, row=1, width=1, height=1)
 
         label = Gtk.Label.new('Product Number:')
         label.set_halign(Gtk.Align.START)
         product_number = Gtk.SpinButton()
-        self.product_number = Gtk.Adjustment.new(0, 0, 0xFFFFFFFF, 1, 0, 0)
+        self.product_number = Gtk.Adjustment.new(0, DEVICE_INFO['ProductNumber'].min,
+                                                 DEVICE_INFO['ProductNumber'].max, 1, 0, 0)
         product_number.set_adjustment(self.product_number)
         grid.attach(label, column=2, row=1, width=1, height=1)
         grid.attach(product_number, column=3, row=1, width=1, height=1)
@@ -127,7 +138,8 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Revision Number:')
         label.set_halign(Gtk.Align.START)
         revision_number = Gtk.SpinButton()
-        self.revision_number = Gtk.Adjustment.new(0, 0, 0xFF, 1, 0, 0)
+        self.revision_number = Gtk.Adjustment.new(0, DEVICE_INFO['RevisionNumber'].min,
+                                                  DEVICE_INFO['RevisionNumber'].max, 1, 0, 0)
         revision_number.set_adjustment(self.revision_number)
         grid.attach(label, column=0, row=2, width=1, height=1)
         grid.attach(revision_number, column=1, row=2, width=1, height=1)
@@ -135,6 +147,7 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Order Code:')
         label.set_halign(Gtk.Align.START)
         self.order_code = Gtk.Entry()
+        self.order_code.set_max_length(DEVICE_INFO['OrderCode'].max_length)
         grid.attach(label, column=0, row=3, width=1, height=1)
         grid.attach(self.order_code, column=1, row=3, width=1, height=1)
 
@@ -156,9 +169,14 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
 
         label = Gtk.Label.new('PDO Mapping Granularity:')
         label.set_halign(Gtk.Align.START)
-        self.granularity = Gtk.Adjustment.new(8, 0, 64, 1, 0, 0)
+        self.granularity = Gtk.Adjustment.new(DEVICE_INFO['Granularity'].default,
+                                              DEVICE_INFO['Granularity'].min,
+                                              DEVICE_INFO['Granularity'].max, 1, 0, 0)
         granularity = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL,
                                 adjustment=self.granularity)
+        granularity.set_digits(0)
+        granularity.set_draw_value(True)
+        granularity.set_value_pos(Gtk.PositionType.RIGHT)
         granularity.set_sensitive(False)
         grid.attach(label, column=0, row=6, width=1, height=1)
         grid.attach(granularity, column=1, row=6, width=1, height=1)
@@ -308,32 +326,3 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
         '''Reset the values from the gui to the values from the data structure'''
 
         self.load_eds(self.eds)
-
-'''
-class MyWindow(Gtk.Window):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        page = MyPage()
-        self.set_child(page)
-
-
-class MyApp(Gtk.Application):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.connect('activate', self.on_activate)
-
-    def on_activate(self, app):
-        self.win = MyWindow(application=app)
-        self.win.present()
-
-
-def main():
-    '' ' Run the main application'' '
-    app = MyApp(application_id='com.example.GtkApplication')
-    return app.run(sys.argv)
-
-
-if __name__ == '__main__':
-    main()
-'''

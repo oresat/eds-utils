@@ -3,6 +3,7 @@ from gi.repository import Gtk
 from ..core import DataType, ObjectType, ACCESS_TYPE
 
 from ..core.eds import EDS
+from ..core.eds_format import VAR
 
 
 class ObjectDictionaryPage(Gtk.ScrolledWindow):
@@ -63,6 +64,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Parameter Name:')
         label.set_halign(Gtk.Align.START)
         self.obj_parameter_name = Gtk.Entry()
+        self.obj_parameter_name.set_max_length(VAR['ParameterName'].max_length)
         grid.attach(label, column=0, row=0, width=1, height=1)
         grid.attach(self.obj_parameter_name, column=1, row=0, width=3, height=1)
 

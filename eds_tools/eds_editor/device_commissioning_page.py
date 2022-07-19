@@ -1,6 +1,7 @@
 from gi.repository import Gtk
 
 from ..core.eds import EDS
+from ..core.eds_format import DEVICE_COMMISSIONING
 
 
 class DeviceCommissioningPage(Gtk.ScrolledWindow):
@@ -22,19 +23,22 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Node Name:')
         label.set_halign(Gtk.Align.START)
         self.node_name = Gtk.Entry()
+        self.node_name.set_max_length(DEVICE_COMMISSIONING['NodeName'].max_length)
         grid.attach(label, column=0, row=0, width=1, height=1)
         grid.attach(self.node_name, column=1, row=0, width=2, height=1)
 
         label = Gtk.Label.new('Network Name:')
         label.set_halign(Gtk.Align.START)
         self.network_name = Gtk.Entry()
+        self.network_name.set_max_length(DEVICE_COMMISSIONING['NetworkName'].max_length)
         grid.attach(label, column=0, row=1, width=1, height=1)
         grid.attach(self.network_name, column=1, row=1, width=2, height=1)
 
         label = Gtk.Label.new('Node ID:')
         label.set_halign(Gtk.Align.START)
         node_id = Gtk.SpinButton()
-        self.node_id = Gtk.Adjustment.new(1, 1, 0xFF, 1, 0, 0)
+        self.node_id = Gtk.Adjustment.new(1, DEVICE_COMMISSIONING['NodeID'].min,
+                                          DEVICE_COMMISSIONING['NodeID'].max, 1, 0, 0)
         node_id.set_adjustment(self.node_id)
         grid.attach(label, column=3, row=0, width=1, height=1)
         grid.attach(node_id, column=4, row=0, width=1, height=1)
@@ -42,7 +46,8 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Net Number:')
         label.set_halign(Gtk.Align.START)
         net_number = Gtk.SpinButton()
-        self.net_number = Gtk.Adjustment.new(0, 0, 0xFFFFFFFF, 1, 0, 0)
+        self.net_number = Gtk.Adjustment.new(0, DEVICE_COMMISSIONING['NetNumber'].min,
+                                             DEVICE_COMMISSIONING['NetNumber'].max, 1, 0, 0)
         net_number.set_adjustment(self.net_number)
         grid.attach(label, column=3, row=1, width=1, height=1)
         grid.attach(net_number, column=4, row=1, width=1, height=1)
@@ -78,7 +83,8 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('LSS Serial Number:')
         label.set_halign(Gtk.Align.START)
         lss_serial_number = Gtk.SpinButton()
-        self.lss_serial_number = Gtk.Adjustment.new(0, 0, 0xFFFFFFFF, 1, 0, 0)
+        self.lss_serial_number = Gtk.Adjustment.new(0, DEVICE_COMMISSIONING['LSS_SerialNumber'].min,
+                                                    DEVICE_COMMISSIONING['LSS_SerialNumber'].max, 1, 0, 0)
         lss_serial_number.set_adjustment(self.lss_serial_number)
         grid.attach(label, column=0, row=4, width=1, height=1)
         grid.attach(lss_serial_number, column=1, row=4, width=1, height=1)
