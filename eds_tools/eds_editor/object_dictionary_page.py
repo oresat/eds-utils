@@ -25,9 +25,10 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         box_tree.append(scrolled_window)
 
         self.od_treeview = Gtk.TreeView()
-        self.indexes_store = Gtk.TreeStore(str, str, str)
+        self.indexes_store = Gtk.TreeStore(str, str)
         self.od_treeview.set_model(self.indexes_store)
-        for i, column_title in enumerate(['Index', 'Subindex', 'Parameter Name']):
+        self.od_treeview.set_enable_tree_lines(True)
+        for i, column_title in enumerate(['Object', 'Parameter Name']):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
             self.od_treeview.append_column(column)
@@ -197,12 +198,12 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         if not treeiter:
             return
 
-        if model[treeiter][0]:
+        if model[treeiter].parent is None:  # index
             index = model[treeiter][0]
             self.selected_obj = self.eds.index(index)
-        else:
+        else:  # subindex
             index = model[treeiter].parent[0]
-            subindex = model[treeiter][1]
+            subindex = model[treeiter][0]
             self.selected_obj = self.eds.subindex(index, subindex)
 
         self._loaf_selection()
@@ -212,11 +213,9 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
 
         for index in self.eds.indexes():
             index_section = self.eds.index(index)
-            self.indexes_store.append(None, [index, '', index_section['ParameterName']])
+            self.indexes_store.append(None, [index, index_section['ParameterName']])
             if index_section['ObjectType'] != ObjectType.VAR:
                 for subindex in self.eds.subindexes(index):
                     subindex_section = self.eds.subindex(index, subindex)
-                    self.indexes_store.append(
-                        self.indexes_store[-1].iter,
-                        ['', subindex, subindex_section['ParameterName']]
-                    )
+                    self.indexes_store.append(self.indexes_store[-1].iter,
+                                              [subindex, subindex_section['ParameterName']])
