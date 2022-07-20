@@ -18,15 +18,21 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
                            margin_start=5, margin_end=5)
         box.append(box_tree)
 
+        self.search_filter_text = ''
+        self.search_entry = Gtk.SearchEntry()
+        self.search_entry.connect('changed', self.on_search_entry)
+        box_tree.append(self.search_entry)
+
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.set_vexpand(True)
         scrolled_window.set_hexpand(True)
         scrolled_window.set_has_frame(True)
         box_tree.append(scrolled_window)
 
-        self.od_treeview = Gtk.TreeView()
         self.indexes_store = Gtk.TreeStore(str, str)
-        self.od_treeview.set_model(self.indexes_store)
+        self.tree_filter = self.indexes_store.filter_new()
+        self.tree_filter.set_visible_func(self.tree_filter_func)
+        self.od_treeview = Gtk.TreeView(model=self.tree_filter)
         self.od_treeview.set_enable_tree_lines(True)
         for i, column_title in enumerate(['Object', 'Parameter Name']):
             renderer = Gtk.CellRendererText()
@@ -169,6 +175,32 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
     def on_cancel_button_clicked(self, button):
 
         self._loaf_selection()
+
+    def on_search_entry(self, entry) -> None:
+        '''Callback on search filter entry for parameter names'''
+
+        self.search_filter_text = self.search_entry.get_text().lower()
+        self.tree_filter.refilter()
+
+    def tree_filter_func(self, model, iter, data) -> bool:
+        '''Callback on refilter to change row visibility
+
+        Return
+        ------
+        bool
+            True to show row,False to not show
+        '''
+
+        if self.search_filter_text:
+            # check parent row's children rows for match
+            for i in range(model.iter_n_children(iter)):
+                subindex_iter = model.iter_nth_child(iter, i)
+                if self.search_filter_text in model[subindex_iter][1].lower():
+                    return True  # a subindex row contains search string
+
+            return self.search_filter_text in model[iter][1].lower()
+
+        return True  # no filter (show all)
 
     def _loaf_selection(self):
 
