@@ -37,7 +37,7 @@ class DataType(IntEnum):
     UNSIGNED64 = 0x1B
 
 
-BAUDRATE = [
+BAUD_RATE = [
     10,
     50,
     100,

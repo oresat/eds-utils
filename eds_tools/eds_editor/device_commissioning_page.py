@@ -1,5 +1,6 @@
 from gi.repository import Gtk
 
+from ..core import BAUD_RATE
 from ..core.eds import EDS
 from ..core.eds_format import DEVICE_COMMISSIONING
 
@@ -55,20 +56,10 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Baud Rate:')
         label.set_halign(Gtk.Align.START)
         grid.attach(label, column=0, row=2, width=1, height=2)
-        baud_rates = [
-            '10 kpbs',
-            '20 kpbs',
-            '50 kpbs',
-            '125 kpbs',
-            '250 kpbs',
-            '500 kpbs',
-            '800 kpbs',
-            '100 kpbs',
-        ]
         first_radio_button = None
-        for i in range(len(baud_rates)):
+        for i in range(len(BAUD_RATE)):
             radio_button = Gtk.CheckButton.new()
-            radio_button.set_label(baud_rates[i])
+            radio_button.set_label(f'{BAUD_RATE[i]} kpbs')
 
             if first_radio_button is None:  # set the first_radio_button var
                 first_radio_button = radio_button
@@ -79,15 +70,17 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
             column = i % 4  # 0 - 3
             row = i // 4  # 0 or 1
             grid.attach(radio_button, column=1 + column, row=2 + row, width=1, height=1)
+        radio_button.set_active(True)  # 1000 kpbs
 
         label = Gtk.Label.new('LSS Serial Number:')
         label.set_halign(Gtk.Align.START)
-        lss_serial_number = Gtk.SpinButton()
-        self.lss_serial_number = Gtk.Adjustment.new(0, DEVICE_COMMISSIONING['LSS_SerialNumber'].min,
-                                                    DEVICE_COMMISSIONING['LSS_SerialNumber'].max, 1, 0, 0)
-        lss_serial_number.set_adjustment(self.lss_serial_number)
+        lss_serial_num = Gtk.SpinButton()
+        self.lss_serial_num = Gtk.Adjustment.new(0, DEVICE_COMMISSIONING['LSS_SerialNumber'].min,
+                                                 DEVICE_COMMISSIONING['LSS_SerialNumber'].max,
+                                                 1, 0, 0)
+        lss_serial_num.set_adjustment(self.lss_serial_num)
         grid.attach(label, column=0, row=4, width=1, height=1)
-        grid.attach(lss_serial_number, column=1, row=4, width=1, height=1)
+        grid.attach(lss_serial_num, column=1, row=4, width=1, height=1)
 
         label = Gtk.Label.new('CANopen Manager:')
         label.set_halign(Gtk.Align.START)
@@ -110,11 +103,11 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
             self.net_number.set_value(device_comm['NetNumber'])
             self.network_name.set_text(device_comm['NetworkName'])
             self.canopen_manager.set_state(device_comm['CANopenManager'])
-            self.lss_serial_number.set_value(device_comm['LSS_SerialNumber'])
+            self.lss_serial_num.set_value(device_comm['LSS_SerialNumber'])
         else:
             self.node_name.set_text('')
             self.node_id.set_value(0)
             self.net_number.set_value(0)
             self.network_name.set_text('')
             self.canopen_manager.set_state(False)
-            self.lss_serial_number.set_value(0)
+            self.lss_serial_num.set_value(0)
