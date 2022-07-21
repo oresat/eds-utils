@@ -16,6 +16,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.file_path = None
 
         self.notebook = Gtk.Notebook()
+        self.notebook.hide()
         self.set_child(self.notebook)
 
         self.gi_page = GeneralInfoPage()
@@ -81,6 +82,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.gi_page.load_eds(self.eds)
         self.od_page.load_eds(self.eds)
         self.dc_page.load_eds(self.eds)
+        self.notebook.show()
 
     def save_file(self, file_path: str = None):
         self.eds.save(file_path)
