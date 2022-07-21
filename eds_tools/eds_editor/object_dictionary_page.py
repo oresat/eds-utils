@@ -18,10 +18,18 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
                            margin_start=5, margin_end=5)
         box.append(box_tree)
 
+        box_search = Gtk.Box(spacing=5)
+        box_tree.append(box_search)
+
         self.search_filter_text = ''
         self.search_entry = Gtk.SearchEntry()
+        self.search_entry.set_hexpand(True)
         self.search_entry.connect('changed', self.on_search_entry)
-        box_tree.append(self.search_entry)
+        box_search.append(self.search_entry)
+
+        button = Gtk.Button(label='Expand All')
+        button.connect('clicked', self.on_expand_clicked)
+        box_search.append(button)
 
         scrolled_window = Gtk.ScrolledWindow()
         scrolled_window.set_vexpand(True)
@@ -201,6 +209,16 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             return self.search_filter_text in model[iter][1].lower()
 
         return True  # no filter (show all)
+
+    def on_expand_clicked(self, button) -> None:
+        '''Callback on expand/collapse all button'''
+
+        if button.get_label() == 'Expand All':
+            self.od_treeview.expand_all()
+            button.set_label('Collapse All')
+        else:
+            self.od_treeview.collapse_all()
+            button.set_label('Expand All')
 
     def _loaf_selection(self):
 
