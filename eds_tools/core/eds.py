@@ -63,6 +63,8 @@ class EDS:
         # read in all seciton keys/values
         raw = {}
         for i in lines[header_index + 1:]:
+            if i == '':  # to handle eds with no trailing empty line
+                continue
             key, value = i.split('=')
             raw[key] = value
 
