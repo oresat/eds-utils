@@ -120,8 +120,8 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         scrolled_window.set_has_frame(True)
         self.obj_comment = Gtk.TextView()
         scrolled_window.set_child(self.obj_comment)
-        grid.attach(label, column=0, row=2, width=1, height=3)
-        grid.attach(scrolled_window, column=1, row=2, width=3, height=3)
+        grid.attach(label, column=0, row=2, width=1, height=5)
+        grid.attach(scrolled_window, column=1, row=2, width=3, height=5)
 
         label = Gtk.Label.new('Data Type:')
         label.set_halign(Gtk.Align.START)
@@ -134,34 +134,34 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         cellrenderertext = Gtk.CellRendererText()
         self.obj_data_type.pack_start(cellrenderertext, True)
         self.obj_data_type.add_attribute(cellrenderertext, 'text', 0)
-        grid.attach(label, column=0, row=5, width=1, height=1)
-        grid.attach(self.obj_data_type, column=1, row=5, width=1, height=1)
+        grid.attach(label, column=0, row=7, width=1, height=1)
+        grid.attach(self.obj_data_type, column=1, row=7, width=1, height=1)
 
         label = Gtk.Label.new('PDO Mapping:')
         label.set_halign(Gtk.Align.START)
         self.obj_pdo_mapping = Gtk.Switch()
         self.obj_pdo_mapping.set_halign(Gtk.Align.START)
         self.obj_pdo_mapping.set_valign(Gtk.Align.CENTER)
-        grid.attach(label, column=2, row=5, width=1, height=1)
-        grid.attach(self.obj_pdo_mapping, column=3, row=5, width=1, height=1)
+        grid.attach(label, column=2, row=7, width=1, height=1)
+        grid.attach(self.obj_pdo_mapping, column=3, row=7, width=1, height=1)
 
         label = Gtk.Label.new('Default Value:')
         label.set_halign(Gtk.Align.START)
         self.obj_default_value = Gtk.Entry()
-        grid.attach(label, column=0, row=6, width=1, height=1)
-        grid.attach(self.obj_default_value, column=1, row=6, width=3, height=1)
+        grid.attach(label, column=0, row=8, width=1, height=1)
+        grid.attach(self.obj_default_value, column=1, row=8, width=3, height=1)
 
         button = Gtk.Button(label='Update')
         button.set_halign(Gtk.Align.END)
         button.set_valign(Gtk.Align.END)
         button.connect('clicked', self.on_update_button_clicked)
-        grid.attach(button, column=0, row=7, width=2, height=2)
+        grid.attach(button, column=0, row=9, width=2, height=2)
 
         button = Gtk.Button(label='Cancel')
         button.set_halign(Gtk.Align.START)
         button.set_valign(Gtk.Align.END)
         button.connect('clicked', self.on_cancel_button_clicked)
-        grid.attach(button, column=2, row=7, width=2, height=2)
+        grid.attach(button, column=2, row=9, width=2, height=2)
 
     def on_update_button_clicked(self, button):
 
