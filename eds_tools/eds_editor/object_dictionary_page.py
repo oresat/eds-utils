@@ -69,8 +69,8 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         frame = Gtk.Frame(label='Selected Object', margin_top=5, margin_bottom=5,
                           margin_start=5, margin_end=5)
         frame.set_valign(Gtk.Align.START)
-
         box.append(frame)
+
         grid = Gtk.Grid(column_spacing=5, row_spacing=5,
                         column_homogeneous=True, row_homogeneous=True,
                         margin_top=5, margin_bottom=5, margin_start=5, margin_end=5)
@@ -85,30 +85,20 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
 
         label = Gtk.Label.new('Object Type:')
         label.set_halign(Gtk.Align.START)
-        self.obj_type = Gtk.ComboBox()
+        self.obj_type = Gtk.DropDown()
         self.obj_type.set_sensitive(False)
-        liststore_type = Gtk.ListStore(str)
-        for item in ObjectType:
-            liststore_type.append([item.name])
-        self.obj_type.set_model(liststore_type)
-        self.obj_type.set_active(0)
-        cellrenderertext = Gtk.CellRendererText()
-        self.obj_type.pack_start(cellrenderertext, True)
-        self.obj_type.add_attribute(cellrenderertext, 'text', 0)
+        obj_type_list = Gtk.StringList.new(strings=[i.name for i in ObjectType])
+        self.obj_type.set_model(obj_type_list)
+        self.obj_type.set_selected(0)
         grid.attach(label, column=0, row=1, width=1, height=1)
         grid.attach(self.obj_type, column=1, row=1, width=1, height=1)
 
         label = Gtk.Label.new('Access Type:')
         label.set_halign(Gtk.Align.START)
-        self.obj_access_type = Gtk.ComboBox()
-        liststore_obj_data = Gtk.ListStore(str)
-        for item in ACCESS_TYPE:
-            liststore_obj_data.append([item])
-        self.obj_access_type.set_model(liststore_obj_data)
-        self.obj_access_type.set_active(0)
-        cellrenderertext = Gtk.CellRendererText()
-        self.obj_access_type.pack_start(cellrenderertext, True)
-        self.obj_access_type.add_attribute(cellrenderertext, 'text', 0)
+        self.obj_access_type = Gtk.DropDown()
+        access_type_list = Gtk.StringList.new(strings=ACCESS_TYPE)
+        self.obj_access_type.set_model(access_type_list)
+        self.obj_access_type.set_selected(0)
         grid.attach(label, column=2, row=1, width=1, height=1)
         grid.attach(self.obj_access_type, column=3, row=1, width=1, height=1)
 
@@ -125,15 +115,10 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
 
         label = Gtk.Label.new('Data Type:')
         label.set_halign(Gtk.Align.START)
-        self.obj_data_type = Gtk.ComboBox()
-        liststore_obj_data = Gtk.ListStore(str)
-        for item in DataType:
-            liststore_obj_data.append([item.name])
-        self.obj_data_type.set_model(liststore_obj_data)
-        self.obj_data_type.set_active(0)
-        cellrenderertext = Gtk.CellRendererText()
-        self.obj_data_type.pack_start(cellrenderertext, True)
-        self.obj_data_type.add_attribute(cellrenderertext, 'text', 0)
+        self.obj_data_type = Gtk.DropDown()
+        data_type_list = Gtk.StringList.new(strings=[i.name for i in DataType])
+        self.obj_data_type.set_model(data_type_list)
+        self.obj_data_type.set_selected(0)
         grid.attach(label, column=0, row=7, width=1, height=1)
         grid.attach(self.obj_data_type, column=1, row=7, width=1, height=1)
 
@@ -227,18 +212,18 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
 
         self.obj_parameter_name.set_text(self.selected_obj['ParameterName'])
         obj_type = self.selected_obj['ObjectType']
-        self.obj_type.set_active(list(ObjectType).index(obj_type))
+        self.obj_type.set_selected(list(ObjectType).index(obj_type))
         self.obj_comment.get_buffer().set_text(self.selected_obj.comment)
         if obj_type == ObjectType.VAR:
             data_type = self.selected_obj['DataType']
-            self.obj_data_type.set_active(list(DataType).index(data_type))
+            self.obj_data_type.set_selected(list(DataType).index(data_type))
             access_type = self.selected_obj['AccessType']
-            self.obj_access_type.set_active(ACCESS_TYPE.index(access_type))
+            self.obj_access_type.set_selected(ACCESS_TYPE.index(access_type))
             self.obj_default_value.set_text(self.selected_obj['DefaultValue'])
             self.obj_pdo_mapping.set_state(self.selected_obj['PDOMapping'])
         else:
-            self.obj_data_type.set_active(0)
-            self.obj_access_type.set_active(0)
+            self.obj_data_type.set_selected(0)
+            self.obj_access_type.set_selected(0)
             self.obj_default_value.set_text('')
             self.obj_pdo_mapping.set_state(False)
 
