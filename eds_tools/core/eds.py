@@ -214,7 +214,7 @@ class EDS:
     def indexes(self) -> list:
         '''Get the list of indexes in OD'''
 
-        return self._data.keys()
+        return sorted(self._data.keys())
 
     @property
     def mandatory_objects(self) -> list:

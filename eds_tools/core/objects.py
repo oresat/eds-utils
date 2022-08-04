@@ -104,7 +104,7 @@ class Array:
     def subindexes(self) -> list:
         '''Get the list of subindexes'''
 
-        return self._data.keys()
+        return sorted(self._data.keys())
 
 
 class Record:
@@ -171,4 +171,4 @@ class Record:
     def subindexes(self) -> list:
         '''Get the list of subindexes'''
 
-        return self._data.keys()
+        return sorted(self._data.keys())
