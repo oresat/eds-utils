@@ -1,12 +1,10 @@
 '''All the object class for the object dictionary'''
 
-from . import DataType, AccessType, ObjectType, str2int
+from . import DataType, AccessType, ObjectType
 
 
 class Variable:
     '''Holds EDS variable data'''
-
-    object_type = ObjectType.VAR
 
     def __init__(self):
         self.comments = ''
@@ -18,56 +16,53 @@ class Variable:
         self.default_value = ''
         self.access_type = AccessType.RW
         self.pdo_mapping = False
+        self.object_type = ObjectType.VAR
 
 
-class Array:
-    '''Holds EDS array data'''
+class Record:
+    '''Holds EDS record data'''
 
-    object_type = ObjectType.ARRAY
-
-    def __init__(self, parameter_name='', subindex0=True):
+    def __init__(self, parameter_name=''):
         '''
         Parameters
         ----------
         parameter_name: str
-            Name of the array.
-        subindex0: bool
-            A flag to auto generate subindex0 (aka subindex for the size of array) for the new
-            array.
+            Name of the record.
         '''
 
         self.parameter_name = parameter_name
         self.denotation = ''
         self.comments = ''
         self._data = {}
+        self.object_type = ObjectType.RECORD
 
-        if subindex0:
-            var = Variable()
-            var.parameter_name = 'Highest sub-index supported'
-            var.access_type = AccessType.CONST
-            self._data[0] = var
+        var = Variable()
+        var.parameter_name = 'Highest sub-index supported'
+        var.access_type = AccessType.CONST
+        self._data[0] = var
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._data)
 
     def __getitem__(self, subindex: int) -> Variable:
         return self._data[subindex]
 
-    def insert(self, subindex: int, variable: Variable, update_subindex0=True) -> None:
-        '''Add a subindex to the array'''
+    def __setitem__(self, subindex: int, variable: Variable) -> None:
+        '''Add a subindex to the record'''
 
-        if subindex in self._data:
+        if subindex == 0:  # overwrite entries in subindex 0
+            self._data[subindex].parameter_name = variable.parameter_name
+            self._data[subindex].access_type = variable.access_type
+        elif subindex in self._data:  # add subindex
             raise ValueError('Subindex already exists')
+        else:
+            self._data[subindex] = variable
 
-        self._data[subindex] = variable
+            # update record size subindex
+            self._data[0].default_value = f'0x{len(self._data) - 1:02X}'
 
-        # update array size subindex
-        if update_subindex0 and 0 in self._data:
-            temp = str2int(self._data[0].default_value) + 1
-            self._data[0].default_value = f'0x{temp:02X}'
-
-    def remove(self, subindex: int, update_subindex0=True) -> None:
-        '''Remove a subindex from the array'''
+    def __delitem__(self, subindex: int) -> None:
+        '''Remove a subindex from the record'''
 
         if subindex == 0:
             raise ValueError('Cannot remove subindex 0')
@@ -76,10 +71,29 @@ class Array:
 
         del self._data[subindex]
 
-        # update array size subindex
-        if update_subindex0 and 0 in self._data:
-            temp = str2int(self._data[0].default_value) - 1
-            self._data[0].default_value = f'0x{temp:02X}'
+        # update record size subindex
+        self._data[0].default_value = f'0x{len(self._data) - 1:02X}'
+
+    @property
+    def subindexes(self) -> list:
+        '''Get the list of subindexes'''
+
+        return sorted(self._data.keys())
+
+
+class Array(Record):
+    '''Holds EDS array data'''
+
+    def __init__(self, parameter_name=''):
+        '''
+        Parameters
+        ----------
+        parameter_name: str
+            Name of the record.
+        '''
+
+        super().__init__(parameter_name)
+        self.object_type = ObjectType.ARRAY
 
     @property
     def data_type(self) -> DataType:
@@ -99,76 +113,3 @@ class Array:
     def data_type(self, data_type: DataType) -> None:
         for i in self._data[1:]:  # skip size subindex
             i.data_type = data_type
-
-    @property
-    def subindexes(self) -> list:
-        '''Get the list of subindexes'''
-
-        return sorted(self._data.keys())
-
-
-class Record:
-    '''Holds EDS record data'''
-
-    object_type = ObjectType.RECORD
-
-    def __init__(self, parameter_name='', subindex0=True):
-        '''
-        Parameters
-        ----------
-        parameter_name: str
-            Name of the record.
-        subindex0: bool
-            A flag to auto generate subindex0 (aka subindex for the size of record).
-        '''
-
-        self.parameter_name = parameter_name
-        self.denotation = ''
-        self.comments = ''
-        self._data = {}
-
-        if subindex0:
-            var = Variable()
-            var.parameter_name = 'Highest sub-index supported'
-            var.access_type = AccessType.CONST
-            self._data[0] = var
-
-    def __len__(self) -> int:
-        return len(self._data)
-
-    def __getitem__(self, subindex: int) -> Variable:
-        return self._data[subindex]
-
-    def insert(self, subindex: int, variable: Variable, update_subindex0=True) -> None:
-        '''Add a subindex to the record'''
-
-        if subindex in self._data:
-            raise ValueError('Subindex already exists')
-
-        self._data[subindex] = variable
-
-        # update record size subindex
-        if update_subindex0 and 0 in self._data:
-            temp = str2int(self._data[0].default_value) + 1
-            self._data[0].default_value = f'0x{temp:02X}'
-
-    def remove(self, subindex: int, update_subindex0=True) -> None:
-        '''Remove a subindex from the record'''
-
-        if subindex == 0:
-            raise ValueError('Cannot remove subindex 0')
-        if subindex not in self._data:
-            raise ValueError('Subindex does not exist')
-
-        del self._data[subindex]
-
-        # update record size subindex
-        if update_subindex0 and 0 in self._data:
-            temp = str2int(self._data[0].default_value) - 1
-            self._data[0].default_value = f'0x{temp:02X}'
-
-    @property
-    def subindexes(self) -> list:
-        '''Get the list of subindexes'''
-
-        return sorted(self._data.keys())

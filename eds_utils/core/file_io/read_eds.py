@@ -86,7 +86,7 @@ def read_eds(file_path: str) -> (EDS, list):
             index = int(header[1:5], 16)
             subindex = int(header[8:-1], 16)
 
-            eds[index].insert(subindex, var, update_subindex0=False)
+            eds[index][subindex] = var
         elif header == '[FileInfo]':
             eds.file_info, err = _read_file_info(header, raw)
             errors += err
@@ -166,7 +166,7 @@ def _read_variable(header: str, lines: dict, comments: str) -> (Variable, list):
 
 def _read_array(header: str, lines: dict, comments: str) -> (Array, list):
     errors = []
-    arr = Array('', subindex0=False)
+    arr = Array('')
     arr.comments = comments
 
     try:
@@ -189,7 +189,7 @@ def _read_array(header: str, lines: dict, comments: str) -> (Array, list):
 
 def _read_record(header: str, lines: dict, comments: str) -> (Record, list):
     errors = []
-    rec = Record('', subindex0=False)
+    rec = Record('')
     rec.comments = comments
 
     try:
