@@ -1,13 +1,13 @@
 import sys
 
 from . import __version__
-from .validate_eds import validate_eds, VALIDATE_EDS_DESCRIPTION
+from .eds_validate import eds_validate, EDS_VALIDATE_DESCRIPTION
 from .eds_editor.main import eds_editor, EDS_EDITOR_DESCRIPTION
 from .eds2dcf import eds2dcf, EDS2DCF_DESCRIPTION
 
 
 PROGRAMS = {
-    'validate-eds': VALIDATE_EDS_DESCRIPTION,
+    'eds-validate': EDS_VALIDATE_DESCRIPTION,
     'eds2dcf': EDS2DCF_DESCRIPTION,
     'eds-editor': EDS_EDITOR_DESCRIPTION,
 }
@@ -27,8 +27,8 @@ def eds_utils():
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         eds_utils()
-    elif sys.argv[1] == 'validate-eds':
-        validate_eds(sys.argv[2:])
+    elif sys.argv[1] == 'eds-validate':
+        eds_validate(sys.argv[2:])
     elif sys.argv[1] == 'eds2dcf':
         eds2dcf(sys.argv[2:])
     elif sys.argv[1] == 'eds-editor':
