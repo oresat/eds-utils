@@ -84,6 +84,13 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         grid.attach(label, column=0, row=0, width=1, height=1)
         grid.attach(self.obj_parameter_name, column=1, row=0, width=3, height=1)
 
+        label = Gtk.Label.new('Denotation:')
+        label.set_halign(Gtk.Align.START)
+        self.obj_denotation = Gtk.Entry()
+        self.obj_denotation.set_max_length(241)
+        grid.attach(label, column=0, row=1, width=1, height=1)
+        grid.attach(self.obj_denotation, column=1, row=1, width=3, height=1)
+
         label = Gtk.Label.new('Object Type:')
         label.set_halign(Gtk.Align.START)
         self.obj_type = Gtk.DropDown()
@@ -91,8 +98,8 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         obj_type_list = Gtk.StringList.new(strings=[i.name for i in ObjectType])
         self.obj_type.set_model(obj_type_list)
         self.obj_type.set_selected(0)
-        grid.attach(label, column=0, row=1, width=1, height=1)
-        grid.attach(self.obj_type, column=1, row=1, width=1, height=1)
+        grid.attach(label, column=0, row=2, width=1, height=1)
+        grid.attach(self.obj_type, column=1, row=2, width=1, height=1)
 
         label = Gtk.Label.new('Access Type:')
         label.set_halign(Gtk.Align.START)
@@ -100,8 +107,8 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         access_type_list = Gtk.StringList.new(strings=[i.name for i in AccessType])
         self.obj_access_type.set_model(access_type_list)
         self.obj_access_type.set_selected(0)
-        grid.attach(label, column=2, row=1, width=1, height=1)
-        grid.attach(self.obj_access_type, column=3, row=1, width=1, height=1)
+        grid.attach(label, column=2, row=2, width=1, height=1)
+        grid.attach(self.obj_access_type, column=3, row=2, width=1, height=1)
 
         label = Gtk.Label.new('Comment:')
         label.set_halign(Gtk.Align.START)
@@ -111,8 +118,8 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         scrolled_window.set_has_frame(True)
         self.obj_comment = Gtk.TextView()
         scrolled_window.set_child(self.obj_comment)
-        grid.attach(label, column=0, row=2, width=1, height=5)
-        grid.attach(scrolled_window, column=1, row=2, width=3, height=5)
+        grid.attach(label, column=0, row=3, width=1, height=5)
+        grid.attach(scrolled_window, column=1, row=3, width=3, height=5)
 
         label = Gtk.Label.new('Data Type:')
         label.set_halign(Gtk.Align.START)
@@ -120,34 +127,46 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         data_type_list = Gtk.StringList.new(strings=[i.name for i in DataType])
         self.obj_data_type.set_model(data_type_list)
         self.obj_data_type.set_selected(0)
-        grid.attach(label, column=0, row=7, width=1, height=1)
-        grid.attach(self.obj_data_type, column=1, row=7, width=1, height=1)
+        grid.attach(label, column=0, row=8, width=1, height=1)
+        grid.attach(self.obj_data_type, column=1, row=8, width=1, height=1)
 
         label = Gtk.Label.new('PDO Mapping:')
         label.set_halign(Gtk.Align.START)
         self.obj_pdo_mapping = Gtk.Switch()
         self.obj_pdo_mapping.set_halign(Gtk.Align.START)
         self.obj_pdo_mapping.set_valign(Gtk.Align.CENTER)
-        grid.attach(label, column=2, row=7, width=1, height=1)
-        grid.attach(self.obj_pdo_mapping, column=3, row=7, width=1, height=1)
+        grid.attach(label, column=2, row=8, width=1, height=1)
+        grid.attach(self.obj_pdo_mapping, column=3, row=8, width=1, height=1)
 
         label = Gtk.Label.new('Default Value:')
         label.set_halign(Gtk.Align.START)
         self.obj_default_value = Gtk.Entry()
-        grid.attach(label, column=0, row=8, width=1, height=1)
-        grid.attach(self.obj_default_value, column=1, row=8, width=3, height=1)
+        grid.attach(label, column=0, row=9, width=1, height=1)
+        grid.attach(self.obj_default_value, column=1, row=9, width=3, height=1)
+
+        label = Gtk.Label.new('Low Limit:')
+        label.set_halign(Gtk.Align.START)
+        self.obj_low_limit = Gtk.Entry()
+        grid.attach(label, column=0, row=10, width=1, height=1)
+        grid.attach(self.obj_low_limit, column=1, row=10, width=1, height=1)
+
+        label = Gtk.Label.new('High Limit:')
+        label.set_halign(Gtk.Align.START)
+        self.obj_high_limit = Gtk.Entry()
+        grid.attach(label, column=2, row=10, width=1, height=1)
+        grid.attach(self.obj_high_limit, column=3, row=10, width=1, height=1)
 
         button = Gtk.Button(label='Update')
         button.set_halign(Gtk.Align.END)
         button.set_valign(Gtk.Align.END)
         button.connect('clicked', self.on_update_button_clicked)
-        grid.attach(button, column=0, row=9, width=2, height=2)
+        grid.attach(button, column=0, row=11, width=2, height=2)
 
         button = Gtk.Button(label='Cancel')
         button.set_halign(Gtk.Align.START)
         button.set_valign(Gtk.Align.END)
         button.connect('clicked', self.on_cancel_button_clicked)
-        grid.attach(button, column=2, row=9, width=2, height=2)
+        grid.attach(button, column=2, row=11, width=2, height=2)
 
     def on_update_button_clicked(self, button):
 
@@ -210,6 +229,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             return
 
         self.obj_parameter_name.set_text(self.selected_obj.parameter_name)
+        self.obj_denotation.set_text(self.selected_obj.denotation)
         obj_type = self.selected_obj.object_type
         self.obj_type.set_selected(list(ObjectType).index(obj_type))
         self.obj_comment.get_buffer().set_text(self.selected_obj.comments)
@@ -220,11 +240,15 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             self.obj_access_type.set_selected(list(AccessType).index(access_type))
             self.obj_default_value.set_text(self.selected_obj.default_value)
             self.obj_pdo_mapping.set_state(self.selected_obj.pdo_mapping)
+            self.obj_low_limit.set_text(self.selected_obj.low_limit)
+            self.obj_high_limit.set_text(self.selected_obj.high_limit)
         else:
             self.obj_data_type.set_selected(0)
             self.obj_access_type.set_selected(0)
             self.obj_default_value.set_text('')
             self.obj_pdo_mapping.set_state(False)
+            self.obj_low_limit.set_text('')
+            self.obj_high_limit.set_text('')
 
     def on_tree_selection_changed(self, selection):
         model, treeiter = selection.get_selected()
@@ -254,11 +278,15 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             self.obj_access_type.hide()
             self.obj_pdo_mapping.hide()
             self.obj_default_value.hide()
+            self.obj_low_limit.hide()
+            self.obj_high_limit.hide()
         else:
             self.obj_data_type.show()
             self.obj_access_type.show()
             self.obj_pdo_mapping.show()
             self.obj_default_value.show()
+            self.obj_low_limit.show()
+            self.obj_high_limit.show()
 
         self._loaf_selection()
 
