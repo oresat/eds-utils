@@ -232,6 +232,9 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         if not treeiter:
             return
 
+        # reset this
+        self.obj_data_type.set_sensitive(True)
+
         if model[treeiter].parent is None:  # index
             index_str = model[treeiter][0]
             index = str2int(index_str)
@@ -242,6 +245,20 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             subindex_str = model[treeiter][0]
             subindex = str2int(subindex_str)
             self.selected_obj = self.eds[index][subindex]
+
+            if subindex == 0:
+                self.obj_data_type.set_sensitive(False)
+
+        if self.selected_obj.object_type in [ObjectType.ARRAY, ObjectType.RECORD]:
+            self.obj_data_type.hide()
+            self.obj_access_type.hide()
+            self.obj_pdo_mapping.hide()
+            self.obj_default_value.hide()
+        else:
+            self.obj_data_type.show()
+            self.obj_access_type.show()
+            self.obj_pdo_mapping.show()
+            self.obj_default_value.show()
 
         self._loaf_selection()
 
