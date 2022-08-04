@@ -5,7 +5,8 @@ from gi.repository import Gtk
 from .general_info_page import GeneralInfoPage
 from .object_dictionary_page import ObjectDictionaryPage
 from .device_commissioning_page import DeviceCommissioningPage
-from ..core.eds import EDS
+from ..core.file_io.read_eds import read_eds
+from ..core.file_io.write_eds import write_eds
 
 
 class AppWindow(Gtk.ApplicationWindow):
@@ -76,16 +77,15 @@ class AppWindow(Gtk.ApplicationWindow):
     def open_file(self, file_path):
         self.file_path = file_path
         self.header.set_title_widget(Gtk.Label.new(basename(file_path)))
-        self.eds = EDS()
-        self.eds.load(file_path)
+        self.eds, _ = read_eds(file_path)
 
         self.gi_page.load_eds(self.eds)
         self.od_page.load_eds(self.eds)
         self.dc_page.load_eds(self.eds)
         self.notebook.show()
 
-    def save_file(self, file_path: str = None):
-        self.eds.save(file_path)
+    def save_file(self, file_path: str = ''):
+        write_eds(self.eds, file_path)
 
     def show_new_dialog(self, button):
         print('new TODO')

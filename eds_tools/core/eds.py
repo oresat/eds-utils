@@ -1,447 +1,254 @@
-import re
-from os.path import basename
-from collections import UserDict
+from datetime import datetime
 
-from . import ObjectType, str2int, DataType
-from .eds_format import INDEX_REGEX, SUBINDEX_REGEX, VAR, RECORD_ARRAY, LIST_OBJECTS, COMMENTS, \
-    EDS_SECTION_ORDER, MANDATORY_OBJECTS, DEVICE_COMMISSIONING, FILE_INFO, DEVICE_INFO
+from . import DataType
+from .objects import Variable, Record
 
 
-class EDSSection(UserDict):
+class FileInfo:
+
     def __init__(self):
-        super().__init__({})
-        self.header = ''
-        self.comment = ''
+        self.file_name = 'new_file.eds'
+        self.file_version = 0
+        self.file_revision = 0
+        self.eds_version = '4.0'
+        self.description = ''
+        self.creation_dt = datetime.now()
+        self.created_by = ''
+        self.modification_dt = datetime.now()
+        self.modified_by = ''
 
 
-def new_device_commissioning_section() -> EDSSection:
-    section = EDSSection()
-    section.header = 'DeviceComissioning'
-    for key in DEVICE_COMMISSIONING:
-        section[key] = DEVICE_COMMISSIONING[key].default
+class DeviceInfo:
+
+    def __init__(self):
+        self.vender_name = ''
+        self.vender_number = 0
+        self.product_name = ''
+        self.product_number = 0
+        self.revision_number = 0
+        self.order_code = ''
+        self.baud_rate = {
+            10: True,
+            20: True,
+            50: True,
+            125: True,
+            250: True,
+            500: True,
+            800: True,
+            1000: True,
+        }
+        self.simple_boot_up_master = False
+        self.simple_boot_up_slave = False
+        self.grandularity = 8
+        self.dynamic_channel_supperted = False
+        self.group_messaging = False
+        self.num_of_rpdo = 0
+        self.num_of_tpdo = 0
+        self.lss_supported = False
+
+
+class DeviceCommissioning:
+
+    def __init__(self):
+        self.node_id = 1
+        self.node_name = ''
+        self.baud_rate = 1000
+        self.net_number = 0
+        self.network_name = ''
+        self.canopen_manager = False
+        self.lss_serialnumber = 0
 
 
 class EDS:
+
+    RPDO_COMM_START = 0x1400
+    RPDO_PARA_START = 0x1600
+    TPDO_COMM_START = 0x1800
+    TPDO_PARA_START = 0x1A00
+    MANDATORY_OBJECTS = [0x1000, 0x1001, 0x1018]
+
     def __init__(self):
-        self._is_dcf = False
+
         self._data = {}
-        self._file_path = None
+        self.file_info = FileInfo()
+        self.device_info = DeviceInfo()
+        self.device_commissioning = DeviceCommissioning()
+        self.comment = ''
 
-    def load(self, file_path: str) -> list:
-        '''load an eds/dcf file'''
+    def __len__(self):
+        return len(self._data)
 
-        self._is_dcf = file_path.endswith('.dcf')
-        self._data = {}
-        self._file_path = file_path
-        errors = []
+    def __getitem__(self, item):
+        return self._data[item]
 
-        with open(file_path, 'r') as fptr:
-            raw = fptr.read()
+    def __setitem__(self, index: int, item):
+        if index in self._data:
+            raise ValueError('index already exist')
 
-        for section_lines in raw.split('\n\n'):
-            if section_lines == '':
-                continue  # handle new line at EOF
-            errors += self._load_section(section_lines)
+        self._data[index] = item
 
-        return errors
+    def insert(self, index: int, subindex: int, item) -> None:
+        '''Insert a object into the object dictionary'''
 
-    def _load_section(self, section_lines) -> list:
-        errors = []
-        lines = section_lines.split('\n')
-        section = EDSSection()
+        if index in self._data:
+            raise ValueError('index already exist')
 
-        header_index = [lines.index(i) for i in lines if i.startswith('[')][0]
-        header = lines[header_index]
-        section.header = header
-
-        for i in lines[:header_index]:
-            section.comment += i[1:] + '\n'
-
-        # remove trailing '\n'
-        section.comment = section.comment[:-1]
-
-        # read in all seciton keys/values
-        raw = {}
-        for i in lines[header_index + 1:]:
-            if i == '':  # to handle eds with no trailing empty line
-                continue
-            key, value = i.split('=')
-            raw[key] = value
-
-        header_name = header[1:-1]  # remove '[' and ']'
-        if header_name in EDS_SECTION_ORDER:
-            definition = EDS_SECTION_ORDER[header_name]
-        elif re.match(INDEX_REGEX, header_name):
-            if str2int(raw['ObjectType']) == ObjectType.VAR:
-                definition = VAR
-            elif str2int(raw['ObjectType']) in [ObjectType.ARRAY, ObjectType.RECORD]:
-                definition = RECORD_ARRAY
-        elif re.match(SUBINDEX_REGEX, header_name):
-            definition = VAR
+        if subindex is None:  # use only index
+            self._data[index] = item
+        elif subindex in self._data:  # use index and subindex
+            raise ValueError('subindex already exist')
+        elif not isinstance(item, Variable):
+            raise ValueError('cannot insert non-Variable into subindex')
         else:
-            raise ValueError('Unknown section: ' + header_name)
+            self._data[index].insert(subindex, item)
 
-        # get all the value for valid EDS keys and log missing ones
-        for key in definition:
-            try:
-                section[key] = definition[key].str2value(raw[key])
-            except KeyError:
-                if key == 'Denotation':  # always add this even if not dcf
-                    if self.is_dcf:
-                        errors.append('key "' + key + '" was missing from ' + header)
-                    section[key] = definition[key].default
-                elif not definition[key].optional:
-                    errors.append('key "' + key + '" was missing from ' + header)
-                    section[key] = definition[key].default
-            except ValueError:
-                errors.append('value "' + raw[key] + '" for key "' + key + '" is misformatted')
-                section[key] = definition[key].default
+    def remove(self, index: int, subindex: int = None) -> None:
+        '''Remove a object from the object dictionary'''
 
-        # check for keys from file that are not in EDS definition
-        for key in raw:
-            if key not in section:
-                if definition in [LIST_OBJECTS, COMMENTS]:  # keys are length dependent
-                    section[key] = raw[key]
-                else:
-                    errors.append('unknown key "' + key + '" was in ' + header)
+        if subindex is None:  # use only index
+            del self._data[index]
+        else:  # use index and subindex
+            del self._data[index][subindex]
 
-        self._data[header_name] = section
+    def add_rpdo(self) -> None:
+        '''Add RPDO to the object dictionary'''
 
-        return errors
+        # find next rpdo splot
+        next_rpdo = -1
+        for i in range(self.RPDO_COMM_START, self.RPDO_PARA_START):
+            if i not in self._data:
+                next_rpdo = i - self.RPDO_COMM_START
+                break
 
-    def save(self, file_path: str = None, dcf: bool = False):
-        '''Save the eds/dcf file'''
-        lines = []
+        if next_rpdo == -1:
+            raise ValueError('No more RPDO slots')
 
-        if not file_path:
-            file_path = self._file_path
+        temp = next_rpdo % 4
+        if temp == 0:
+            cob_id = '$NODEID + 0x200'
+        elif temp == 1:
+            cob_id = '$NODEID + 0x300'
+        elif temp == 2:
+            cob_id = '$NODEID + 0x400'
+        else:  # 3
+            cob_id = '$NODEID + 0x500'
 
-        # fix name for DCFs
-        if dcf and file_path.endswith('.eds'):
-            file_path = file_path[:-4] + '.dcf'
+        # communication object
+        comm_rec = Record('RPDO communication parameter')
+        comm_rec[1] = Variable(parameter_name='COB-ID used by RPDO', default_value=cob_id)
+        comm_rec[2] = Variable(parameter_name='Transmission type')
+        comm_rec[3] = Variable(parameter_name='Inhibit time')
+        comm_rec[4] = Variable(parameter_name='Compatibility entry', data_type=DataType.UNSIGNED8)
+        comm_rec[5] = Variable(parameter_name='Event timer')
+        comm_rec[6] = Variable(parameter_name='SYNC start value', data_type=DataType.UNSIGNED8)
+        self._data[self.RPDO_COMM_START + next_rpdo] = comm_rec
 
-        for i in EDS_SECTION_ORDER:
-            if i == 'DeviceComissioning' and not dcf:
-                continue
+        # mapping object
+        para_rec = Record('RPDO mapping parameter')
+        for i in range(1, 9):
+            para_rec[i] = Variable(parameter_name=f'Application object {i}')
+        self._data[self.RPDO_PARA_START + next_rpdo] = para_rec
 
-            lines.append(self._data[i].header)
+    def add_tpdo(self) -> None:
+        '''Add TPDO to the object dictionary'''
 
-            if i in ['FileInfo', 'DeviceInfo', 'DeviceComissioning', 'DummyUsage', 'Comments']:
-                for key in self._data[i]:
-                    value = EDS_SECTION_ORDER[i][key].value2str(self._data[i][key])
-                    if key == 'FileName':
-                        value = basename(file_path)
-                    lines.append(key + '=' + value)
+        # find next tpdo splot
+        next_tpdo = -1
+        for i in range(self.TPDO_COMM_START, self.TPDO_PARA_START):
+            if i not in self._data:
+                next_tpdo = i - self.TPDO_COMM_START
+                break
 
-                lines.append('')
-            else:
-                key = 'SupportedObjects'
-                value = EDS_SECTION_ORDER[i][key].value2str(self._data[i][key])
-                lines.append(key + '=' + value)
+        if next_tpdo == -1:
+            raise ValueError('No more TPDO slots')
 
-                if i == 'MandatoryObjects':
-                    objects = self.mandatory_objects
-                elif i == 'OptionalObjects':
-                    objects = self.optional_objects
-                elif i == 'ManufacturerObjects':
-                    objects = self.manufacturer_objects
+        temp = next_tpdo % 4
+        if temp == 0:
+            cob_id = '$NODEID + 0x180'
+        elif temp == 1:
+            cob_id = '$NODEID + 0x280'
+        elif temp == 2:
+            cob_id = '$NODEID + 0x380'
+        else:  # 3
+            cob_id = '$NODEID + 0x480'
 
-                for value in objects:
-                    key = str(objects.index(value) + 1)
-                    lines.append(key + '=' + value)
+        # communication object
+        comm_rec = Record('TPDO communication parameter')
+        comm_rec[1] = Variable(parameter_name='COB-ID used by TPDO', default_value=cob_id)
+        comm_rec[2] = Variable(parameter_name='Transmission type')
+        comm_rec[3] = Variable(parameter_name='Inhibit time')
+        # 4 is reserved in CiA 301 for TPDOs
+        comm_rec[5] = Variable(parameter_name='Event timer')
+        comm_rec[6] = Variable(parameter_name='SYNC start value', data_type=DataType.UNSIGNED8)
+        self._data[self.TPDO_COMM_START + next_tpdo] = comm_rec
 
-                lines.append('')
-
-                lines += self._save_objects(objects, dcf)
-
-        with open(file_path, 'w') as f:
-            for i in lines:
-                f.write(i + '\n')
-
-    def _save_objects(self, objects: list, dcf: bool) -> list:
-        lines = []
-
-        for i in objects:
-            section = self.index(i)
-            if section.comment:
-                for c in section.comment.split('\n'):
-                    lines.append(f';{c}')
-            lines.append(section.header)
-            name = section.header[1:-1]
-
-            for key in self._data[name]:
-                if key == 'Denotation' and dcf is False:
-                    continue  # Denotation is for DCF only
-                if self._data[name]['ObjectType'] == ObjectType.VAR:
-                    value = VAR[key].value2str(self._data[name][key])
-                else:
-                    value = RECORD_ARRAY[key].value2str(self._data[name][key])
-                lines.append(key + '=' + value)
-
-            lines.append('')
-
-            for j in self.subindexes(i):
-                section = self.subindex(i, j)
-                if section.comment:
-                    for c in section.comment.split('\n'):
-                        lines.append(f';{c}')
-                lines.append(section.header)
-                name = section.header[1:-1]
-
-                for key in self._data[name]:
-                    if key == 'Denotation' and dcf is False:
-                        continue  # Denotation is for DCF only
-                    value = VAR[key].value2str(self._data[name][key])
-                    lines.append(key + '=' + value)
-
-                lines.append('')
-
-        return lines
-
-    def _is_valid_section(self, section: EDSSection, header: str, definition: dict) -> bool:
-        if section.header != header:
-            raise ValueError(f'device commissioning header not "{header}"')
-
-        for i in definition:
-            if i not in section:
-                raise ValueError(f'missing key "{i}"')
-            if not definition[i].is_valid(section[i]):
-                raise TypeError(f'invalid type for key "{i}"')
-
-        for i in section:
-            if i not in definition:
-                raise ValueError(f'unknown key "{i}"')
+        # mapping object
+        para_rec = Record('TPDO mapping parameter')
+        for i in range(1, 9):
+            para_rec[i] = Variable(parameter_name=f'Application object {i}')
+        self._data[self.TPDO_PARA_START + next_tpdo] = para_rec
 
     @property
-    def file_info(self) -> EDSSection:
-        '''Get the section for file info'''
-        return self._data['FileInfo'].copy()
+    def rpdos(self) -> int:
+        '''Get the number of RPDOs'''
 
-    @file_info.setter
-    def file_info(self, section: EDSSection):
-        '''Set the section for file info'''
-        self._is_valid_section(section, '[FileInfo]', FILE_INFO)
-        self._data['FileInfo'] = section
+        count = 0
+        for i in range(self.RPDO_COMM_START, self.RPDO_PARA_START):
+            if i in self._data:
+                count += 1
+
+        return count
 
     @property
-    def device_info(self) -> EDSSection:
-        '''Get the device info section of the eds'''
-        return self._data['DeviceInfo'].copy()
+    def tpdos(self) -> int:
+        '''Get the number of TPDOs'''
 
-    @device_info.setter
-    def device_info(self, section: EDSSection):
-        '''Set the section for device info'''
-        self._is_valid_section(section, '[DeviceInfo]', DEVICE_INFO)
-        self._data['DeviceInfo'] = section
+        count = 0
+        for i in range(self.TPDO_COMM_START, self.TPDO_PARA_START):
+            if i in self._data:
+                count += 1
+
+        return count
+
+    @property
+    def indexes(self) -> list:
+        '''Get the list of indexes in OD'''
+
+        return self._data.keys()
 
     @property
     def mandatory_objects(self) -> list:
-        '''Get the list of all mandatory objects in OD'''
-        mandatory_objects = []
+        '''Get the list of mandatory objects in OD'''
 
-        for i in MANDATORY_OBJECTS:
-            if i[2:] in self._data:
-                mandatory_objects.append(i)
+        objects = []
 
-        return mandatory_objects
+        for i in self.MANDATORY_OBJECTS:
+            if i in self._data:
+                objects.append(i)
+
+        return objects
 
     @property
     def optional_objects(self) -> list:
-        '''Get the list of all optional objects in OD'''
-        optional_objects = []
+        '''Get the list of optional objects in OD'''
+
+        objects = []
 
         for i in self._data:
-            if not re.match(INDEX_REGEX, i):
-                continue
+            if (i > 0x1000 and i <= 0x1FFF and i not in self.MANDATORY_OBJECTS) \
+                    or (i > 0x6000 and i <= 0xFFFF):
+                objects.append(i)
 
-            i_hex = '0x' + i
-            if i_hex in MANDATORY_OBJECTS:
-                continue
-
-            index = str2int(i_hex)
-            if (index >= 0x1000 and index <= 0x1FFF) or (index >= 0x6000 and index <= 0XFFFF):
-                optional_objects.append(i_hex)
-
-        return optional_objects
+        return objects
 
     @property
     def manufacturer_objects(self) -> list:
-        '''Get the list of all manufacturer objects in OD'''
-        manufacturer_objects = []
+        '''Get the list of manufacturer objects in OD'''
+
+        objects = []
 
         for i in self._data:
-            if not re.match(INDEX_REGEX, i):
-                continue
+            if i > 0x2000 and i <= 0x5FFF:
+                objects.append(i)
 
-            i_hex = '0x' + i
-            if i in MANDATORY_OBJECTS:
-                continue
-
-            index = str2int(i_hex)
-            if index >= 0x2000 and index <= 0x5FFF:
-                manufacturer_objects.append(i_hex)
-
-        return manufacturer_objects
-
-    @property
-    def device_commissioning(self) -> EDSSection:
-        '''EDSSection: Get the section for device commissioning (DCF only)'''
-        data = None
-
-        if 'DeviceComissioning' in self._data:
-            data = self._data['DeviceComissioning'].copy
-
-        return data
-
-    @device_commissioning.setter
-    def device_commissioning(self, section: EDSSection):
-        '''Set the section for device commissioning (DCF only)'''
-        self._is_valid_section(section, '[DeviceComissioning]', DEVICE_COMMISSIONING)
-        self._data['DeviceComissioning'] = section
-        self._is_dcf = True
-
-    def indexes(self) -> list:
-        '''Get the list of indexes'''
-        indexes = []
-
-        for i in self._data:
-            if re.match(INDEX_REGEX, i):
-                indexes.append(int(i, 16))
-
-        # sort the indexes before returning
-        return [f'0x{i:X}' for i in sorted(indexes)]
-
-    def subindexes(self, index: str) -> list:
-        '''Get the list of subindexes for an index'''
-        subindexes = []
-
-        temp = index[2:] + 'sub'
-
-        for i in self._data:
-            if i.startswith(temp):
-                subindexes.append('0x' + i[7:])
-
-        return subindexes
-
-    def index(self, index: str) -> EDSSection:
-        '''Get a copy of the section data at an index'''
-        key = index[2:]
-        data = self._data[key].copy()
-        return data
-
-    def subindex(self, index: str, subindex: str) -> EDSSection:
-        '''Get a copy of the section data at an subindex'''
-        key = index[2:] + 'sub' + subindex[2:]
-        data = self._data[key].copy()
-        return data
-
-    def add_variable_index(self, index: int):
-        '''Add a new VAR index to OD'''
-        key = hex(index)[2:]
-        if key in self._data:
-            raise ValueError('Index already exist')
-
-        eds_section = EDSSection()
-        for i in VAR:
-            eds_section[i] = VAR[i].default
-        self._data[key] = eds_section
-
-    def add_variable_subindex(self, index: int, subindex: int):
-        '''Add a new subindex to OD'''
-        key = hex(index)[2:] + 'sub' + hex(subindex)[2:]
-        if key in self._data:
-            raise ValueError('Subindex already exist')
-
-        eds_section = EDSSection()
-        for i in VAR:
-            eds_section[i] = VAR[i].default
-        self._data[key] = eds_section
-
-    def add_record(self, index: int):
-        '''Add a new record to OD'''
-        key = hex(index)[2:]
-        if key in self._data:
-            raise ValueError('Index already exist')
-
-        # add record index
-        eds_section = EDSSection()
-        for i in RECORD_ARRAY:
-            eds_section[i] = RECORD_ARRAY[i].default
-        eds_section['SubNumber'] = '0x01'
-        self._data[key] = eds_section
-
-        # add subindex 0
-        eds_section = EDSSection()
-        for i in VAR:
-            eds_section[i] = VAR[i].default
-        eds_section['ParameterName'] = 'Highest sub-index supported'
-        eds_section['DataType'] = DataType.UNSIGNED8
-        eds_section['AccessType'] = 'ro'
-        eds_section['DefaultValue'] = '0x00'
-        key = hex(index)[2:] + 'sub0'
-        self._data[key] = eds_section
-
-    def add_array(self, index: int, size: int, data_type: DataType):
-        '''Add a new array to OD'''
-        key = hex(index)[2:]
-        if key in self._data:
-            raise ValueError('Index already exist')
-
-        # add array index
-        eds_section = EDSSection()
-        for i in RECORD_ARRAY:
-            eds_section[i] = RECORD_ARRAY[i].default
-        eds_section['SubNumber'] = hex(index)
-        self._data[key] = eds_section
-
-        # add subindex 0
-        eds_section = EDSSection()
-        for i in VAR:
-            eds_section[i] = VAR[i].default
-        eds_section['ParameterName'] = 'Highest sub-index supported'
-        eds_section['DataType'] = DataType.UNSIGNED8
-        eds_section['AccessType'] = 'ro'
-        eds_section['DefaultValue'] = '0x00'
-        key = hex(index)[2:] + 'sub0'
-        self._data[key] = eds_section
-
-        # add subindexes
-        for i in size:
-            eds_section = EDSSection()
-            for i in VAR:
-                eds_section[i] = VAR[i].default
-            eds_section['ParameterName'] = 'Highest sub-index supported'
-            eds_section['DataType'] = data_type
-            eds_section['DefaultValue'] = '0'
-            key = hex(index)[2:] + 'sub' + hex(size + 1)[2:]
-            self._data[key] = eds_section
-
-    def remove_index(self, index: int):
-        '''Remove a index from the OD'''
-        name = hex(index)[2:]
-
-        if name in self._data:
-            if self._data[name]['ObjectType'] != ObjectType.VAR:  # delete all the subindexes
-                for i in self.subindexes():
-                    del self._data[i[2:]]
-            del self._data[name]
-
-    def remove_subindex(self, index: int, subindex: int):
-        '''Remove a subindex from the OD'''
-        name = hex(index)[2:]
-        sub_name = hex(index)[2:] + 'sub' + hex(subindex)[2:]
-        del self._data[sub_name]
-
-        # decress the subindex count for the reocord/array
-        temp = str2int(self._data[name]['DefaultValue'])
-        temp -= 12
-        self._data[name]['DefaultValue'] = hex(temp)
-
-    @property
-    def is_dcf(self):
-        '''Check if the file that was loaded is a dcf or not'''
-        return self._is_dcf
-
-    def update_object(self, obj: EDSSection):
-        '''update a object in the OD'''
-        pass
+        return objects

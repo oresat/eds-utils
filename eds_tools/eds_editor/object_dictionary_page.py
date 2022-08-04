@@ -1,14 +1,15 @@
 from gi.repository import Gtk
 
-from ..core import DataType, ObjectType, ACCESS_TYPE
-
+from ..core import DataType, ObjectType, AccessType, str2int
 from ..core.eds import EDS
-from ..core.eds_format import VAR
 
 
 class ObjectDictionaryPage(Gtk.ScrolledWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.eds = None
+        self.selected_obj = None
 
         box = Gtk.Box(homogeneous=True)
         self.set_child(box)
@@ -79,7 +80,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Parameter Name:')
         label.set_halign(Gtk.Align.START)
         self.obj_parameter_name = Gtk.Entry()
-        self.obj_parameter_name.set_max_length(VAR['ParameterName'].max_length)
+        self.obj_parameter_name.set_max_length(241)
         grid.attach(label, column=0, row=0, width=1, height=1)
         grid.attach(self.obj_parameter_name, column=1, row=0, width=3, height=1)
 
@@ -96,7 +97,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Access Type:')
         label.set_halign(Gtk.Align.START)
         self.obj_access_type = Gtk.DropDown()
-        access_type_list = Gtk.StringList.new(strings=ACCESS_TYPE)
+        access_type_list = Gtk.StringList.new(strings=[i.name for i in AccessType])
         self.obj_access_type.set_model(access_type_list)
         self.obj_access_type.set_selected(0)
         grid.attach(label, column=2, row=1, width=1, height=1)
@@ -153,17 +154,15 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         if self.selected_obj is None:
             return
 
-        self.selected_obj['ParameterName'] = self.obj_parameter_name.get_text()
-        obj_type = self.obj_type.get_active()
-        self.selected_obj['ObjectType'] = list(ObjectType)[obj_type]
+        self.selected_obj.pParameter_name = self.obj_parameter_name.get_text()
         buf = self.obj_comment.get_buffer()
-        self.selected_obj.comment = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
-        data_type = self.obj_data_type.get_active()
-        self.selected_obj['DataType'] = list(DataType)[data_type]
-        access_type = self.obj_access_type.get_active()
-        self.selected_obj['DataType'] = ACCESS_TYPE[access_type]
-        self.selected_obj['DefaultValue'] = self.obj_default_value
-        self.selected_obj['PDOMapping'] = self.obj_pdo_mapping
+        self.selected_obj.comments = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
+        data_type = self.obj_data_type.get_selected()
+        self.selected_obj.data_type = list(DataType)[data_type]
+        access_type = self.obj_access_type.get_selected()
+        self.selected_obj.access_type = list(AccessType)[access_type]
+        self.selected_obj.default_value = self.obj_default_value.get_text()
+        self.selected_obj.pdo_mapping = self.obj_pdo_mapping.get_state()
 
     def on_cancel_button_clicked(self, button):
 
@@ -210,17 +209,17 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         if self.selected_obj is None:
             return
 
-        self.obj_parameter_name.set_text(self.selected_obj['ParameterName'])
-        obj_type = self.selected_obj['ObjectType']
+        self.obj_parameter_name.set_text(self.selected_obj.parameter_name)
+        obj_type = self.selected_obj.object_type
         self.obj_type.set_selected(list(ObjectType).index(obj_type))
-        self.obj_comment.get_buffer().set_text(self.selected_obj.comment)
-        if obj_type == ObjectType.VAR:
-            data_type = self.selected_obj['DataType']
+        self.obj_comment.get_buffer().set_text(self.selected_obj.comments)
+        if self.selected_obj.object_type == ObjectType.VAR:
+            data_type = self.selected_obj.data_type
             self.obj_data_type.set_selected(list(DataType).index(data_type))
-            access_type = self.selected_obj['AccessType']
-            self.obj_access_type.set_selected(ACCESS_TYPE.index(access_type))
-            self.obj_default_value.set_text(self.selected_obj['DefaultValue'])
-            self.obj_pdo_mapping.set_state(self.selected_obj['PDOMapping'])
+            access_type = self.selected_obj.access_type
+            self.obj_access_type.set_selected(list(AccessType).index(access_type))
+            self.obj_default_value.set_text(self.selected_obj.default_value)
+            self.obj_pdo_mapping.set_state(self.selected_obj.pdo_mapping)
         else:
             self.obj_data_type.set_selected(0)
             self.obj_access_type.set_selected(0)
@@ -234,23 +233,28 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             return
 
         if model[treeiter].parent is None:  # index
-            index = model[treeiter][0]
-            self.selected_obj = self.eds.index(index)
+            index_str = model[treeiter][0]
+            index = str2int(index_str)
+            self.selected_obj = self.eds[index]
         else:  # subindex
-            index = model[treeiter].parent[0]
-            subindex = model[treeiter][0]
-            self.selected_obj = self.eds.subindex(index, subindex)
+            index_str = model[treeiter].parent[0]
+            index = str2int(index_str)
+            subindex_str = model[treeiter][0]
+            subindex = str2int(subindex_str)
+            self.selected_obj = self.eds[index][subindex]
 
         self._loaf_selection()
 
     def load_eds(self, eds: EDS):
         self.eds = eds
 
-        for index in self.eds.indexes():
-            index_section = self.eds.index(index)
-            self.indexes_store.append(None, [index, index_section['ParameterName']])
-            if index_section['ObjectType'] != ObjectType.VAR:
-                for subindex in self.eds.subindexes(index):
-                    subindex_section = self.eds.subindex(index, subindex)
+        for index in self.eds.indexes:
+            index_str = f'0x{index:X}'
+            index_section = self.eds[index]
+            self.indexes_store.append(None, [index_str, index_section.parameter_name])
+            if index_section.object_type != ObjectType.VAR:
+                for subindex in self.eds[index].subindexes:
+                    subindex_str = f'0x{subindex:X}'
+                    subindex_section = self.eds[index][subindex]
                     self.indexes_store.append(self.indexes_store[-1].iter,
-                                              [subindex, subindex_section['ParameterName']])
+                                              [subindex_str, subindex_section.parameter_name])

@@ -1,7 +1,7 @@
 import sys
 import argparse
 
-from .core.eds import EDS
+from .core.file_io.read_eds import read_eds
 
 VALIDATE_EDS_DESCRIPTION = 'Validate EDS/DCF file'
 
@@ -16,15 +16,11 @@ def validate_eds(sys_args=None):
     parser.add_argument('-s', '--silence', action='store_true', help='silence prints to stderr')
     args = parser.parse_args(sys_args)
 
-    eds = EDS()
-
-    errors = eds.load(args.filepath)
+    _, errors = read_eds(args.filepath)
 
     if not args.silence:
         for i in errors:
             print(i, file=sys.stderr)
-
-    eds.save('temp.dcf')
 
     if len(errors) > 0:
         sys.exit(1)

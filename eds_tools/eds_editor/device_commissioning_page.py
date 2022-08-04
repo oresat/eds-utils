@@ -2,7 +2,6 @@ from gi.repository import Gtk
 
 from ..core import BAUD_RATE
 from ..core.eds import EDS
-from ..core.eds_format import DEVICE_COMMISSIONING
 
 
 class DeviceCommissioningPage(Gtk.ScrolledWindow):
@@ -24,22 +23,21 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Node Name:')
         label.set_halign(Gtk.Align.START)
         self.node_name = Gtk.Entry()
-        self.node_name.set_max_length(DEVICE_COMMISSIONING['NodeName'].max_length)
+        self.node_name.set_max_length(246)
         grid.attach(label, column=0, row=0, width=1, height=1)
         grid.attach(self.node_name, column=1, row=0, width=2, height=1)
 
         label = Gtk.Label.new('Network Name:')
         label.set_halign(Gtk.Align.START)
         self.network_name = Gtk.Entry()
-        self.network_name.set_max_length(DEVICE_COMMISSIONING['NetworkName'].max_length)
+        self.network_name.set_max_length(243)
         grid.attach(label, column=0, row=1, width=1, height=1)
         grid.attach(self.network_name, column=1, row=1, width=2, height=1)
 
         label = Gtk.Label.new('Node ID:')
         label.set_halign(Gtk.Align.START)
         node_id = Gtk.SpinButton()
-        self.node_id = Gtk.Adjustment.new(1, DEVICE_COMMISSIONING['NodeID'].min,
-                                          DEVICE_COMMISSIONING['NodeID'].max, 1, 0, 0)
+        self.node_id = Gtk.Adjustment.new(1, 0x1, 0x7F, 1, 0, 0)
         node_id.set_adjustment(self.node_id)
         grid.attach(label, column=3, row=0, width=1, height=1)
         grid.attach(node_id, column=4, row=0, width=1, height=1)
@@ -47,8 +45,7 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Net Number:')
         label.set_halign(Gtk.Align.START)
         net_number = Gtk.SpinButton()
-        self.net_number = Gtk.Adjustment.new(0, DEVICE_COMMISSIONING['NetNumber'].min,
-                                             DEVICE_COMMISSIONING['NetNumber'].max, 1, 0, 0)
+        self.net_number = Gtk.Adjustment.new(0, 0, 0xFFFFFFFF, 1, 0, 0)
         net_number.set_adjustment(self.net_number)
         grid.attach(label, column=3, row=1, width=1, height=1)
         grid.attach(net_number, column=4, row=1, width=1, height=1)
@@ -75,9 +72,7 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('LSS Serial Number:')
         label.set_halign(Gtk.Align.START)
         lss_serial_num = Gtk.SpinButton()
-        self.lss_serial_num = Gtk.Adjustment.new(0, DEVICE_COMMISSIONING['LSS_SerialNumber'].min,
-                                                 DEVICE_COMMISSIONING['LSS_SerialNumber'].max,
-                                                 1, 0, 0)
+        self.lss_serial_num = Gtk.Adjustment.new(0, 0, 0xFFFFFFFF, 1, 0, 0)
         lss_serial_num.set_adjustment(self.lss_serial_num)
         grid.attach(label, column=0, row=4, width=1, height=1)
         grid.attach(lss_serial_num, column=1, row=4, width=1, height=1)
@@ -98,12 +93,12 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
 
         device_comm = self.eds.device_commissioning
         if device_comm:
-            self.node_name.set_text(device_comm['NodeName'])
-            self.node_id.set_value(device_comm['NodeID'])
-            self.net_number.set_value(device_comm['NetNumber'])
-            self.network_name.set_text(device_comm['NetworkName'])
-            self.canopen_manager.set_state(device_comm['CANopenManager'])
-            self.lss_serial_num.set_value(device_comm['LSS_SerialNumber'])
+            self.node_name.set_text(device_comm.node_name)
+            self.node_id.set_value(device_comm.node_id)
+            self.net_number.set_value(device_comm.net_number)
+            self.network_name.set_text(device_comm.network_name)
+            self.canopen_manager.set_state(device_comm.canopen_manager)
+            self.lss_serial_num.set_value(device_comm.lss_serialnumber)
         else:
             self.node_name.set_text('')
             self.node_id.set_value(0)

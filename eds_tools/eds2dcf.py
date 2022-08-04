@@ -2,7 +2,8 @@ import sys
 import argparse
 
 from .core import str2int
-from .core.eds import EDS, EDSSection
+from .core.file_io.read_eds import read_eds
+from .core.file_io.write_eds import write_eds
 
 EDS2DCF_DESCRIPTION = 'EDS to DCF CLI tool'
 
@@ -27,22 +28,17 @@ def eds2dcf(sys_args=None):
     parser.add_argument('-o', '--output', default='', help='output file path')
     args = parser.parse_args(sys_args)
 
-    eds = EDS()
-    eds.load(args.filepath)
+    eds, errors = read_eds(args.filepath)
 
-    section = EDSSection()
-    section.header = '[DeviceComissioning]'
-    section['NodeID'] = str2int(args.node_id)
-    section['NodeName'] = args.node_name
-    section['Baudrate'] = args.baud_rate
-    section['NetNumber'] = args.net_number
-    section['NetworkName'] = args.network_name
-    section['CANopenManager'] = args.canopen_manager
-    section['LSS_SerialNumber'] = args.lss_serial_number
-
-    eds.device_commissioning = section
+    eds.device_commissioning.node_id = str2int(args.node_id)
+    eds.device_commissioning.node_name = args.node_name
+    eds.device_commissioning.baud_rate = args.baud_rate
+    eds.device_commissioning.net_number = args.net_number
+    eds.device_commissioning.network_name = args.network_name
+    eds.device_commissioning.canopen_manager = args.canopen_manager
+    eds.device_commissioning.lss_serialnumber = args.lss_serial_number
 
     if args.output:
-        eds.save(args.output, dcf=True)
+        write_eds(eds, file_path=args.output, dcf=True)
     else:
-        eds.save(dcf=True)
+        write_eds(eds, dcf=True)

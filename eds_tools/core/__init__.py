@@ -1,4 +1,28 @@
-from enum import IntEnum
+from enum import Enum, IntEnum, auto
+
+
+BAUD_RATE = [
+    10,
+    20,
+    50,
+    125,
+    250,
+    500,
+    800,
+    1000,
+]
+'''CANopen baud rates in kpbs'''
+
+
+def str2int(value: str) -> int:
+    '''Convert str from eds files to int. Support base 10 and 16 definitions.'''
+
+    if value.startswith('0x'):
+        ret = int(value, 16)
+    else:
+        ret = int(value)
+
+    return ret
 
 
 class ObjectType(IntEnum):
@@ -6,64 +30,62 @@ class ObjectType(IntEnum):
     ARRAY = 0x08
     RECORD = 0x09
 
+    @staticmethod
+    def from_str(value: str):
+        return ObjectType(str2int(value))
+
+    def to_str(self):
+        return f'0x{self.value:02X}'
+
 
 class DataType(IntEnum):
-    BOOLEAN = 0x01
-    INTEGER8 = 0x02
-    INTEGER16 = 0x03
-    INTEGER32 = 0x04
-    UNSIGNED8 = 0x05
-    UNSIGNED16 = 0x06
-    UNSIGNED32 = 0x07
-    REAL32 = 0x08
-    VISIBLE_STRING = 0x09
-    OCTET_STRING = 0x0A
-    UNICODE_STRING = 0x0B
-    TIME_OF_DAY = 0x0C
-    TIME_DIFFERENCE = 0x0D
-    # 0x0E reserved
-    DOMAIN = 0x0F
-    INTEGER24 = 0x10
-    REAL64 = 0x11
-    INTEGER40 = 0x12
-    INTEGER48 = 0x13
-    INTEGER56 = 0x14
-    INTEGER64 = 0x15
-    UNSIGNED24 = 0x16
-    # 0x17 reserved
-    UNSIGNED40 = 0x18
-    UNSIGNED48 = 0x19
-    UNSIGNED56 = 0x1A
-    UNSIGNED64 = 0x1B
+    BOOLEAN = 0x0001
+    INTEGER8 = 0x0002
+    INTEGER16 = 0x0003
+    INTEGER32 = 0x0004
+    UNSIGNED8 = 0x0005
+    UNSIGNED16 = 0x0006
+    UNSIGNED32 = 0x0007
+    REAL32 = 0x0008
+    VISIBLE_STRING = 0x0009
+    OCTET_STRING = 0x000A
+    UNICODE_STRING = 0x000B
+    TIME_OF_DAY = 0x000C
+    TIME_DIFFERENCE = 0x000D
+    # 0x000E reserved
+    DOMAIN = 0x000F
+    INTEGER24 = 0x0010
+    REAL64 = 0x0011
+    INTEGER40 = 0x0012
+    INTEGER48 = 0x0013
+    INTEGER56 = 0x0014
+    INTEGER64 = 0x0015
+    UNSIGNED24 = 0x0016
+    # 0x0017 reserved
+    UNSIGNED40 = 0x0018
+    UNSIGNED48 = 0x0019
+    UNSIGNED56 = 0x001A
+    UNSIGNED64 = 0x001B
+
+    @staticmethod
+    def from_str(value: str):
+        return DataType(str2int(value))
+
+    def to_str(self):
+        return f'0x{self.value:04X}'
 
 
-BAUD_RATE = [
-    10,
-    50,
-    100,
-    125,
-    250,
-    500,
-    800,
-    1000,
-]
+class AccessType(Enum):
+    RO = auto()
+    WO = auto()
+    RW = auto()
+    RWR = auto()
+    RWW = auto()
+    CONST = auto()
 
-ACCESS_TYPE = [
-    'ro',
-    'wo',
-    'rw',
-    'rwr',
-    'rww',
-    'const',
-]
+    @staticmethod
+    def from_str(value: str):
+        return AccessType[value.upper()]
 
-
-def str2int(string: str) -> int:
-    '''definition strait from CiA 306'''
-
-    if string.startswith('0x'):
-        ret = int(string, 16)
-    else:
-        ret = int(string)
-
-    return ret
+    def to_str(self):
+        return self.name.lower()
