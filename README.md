@@ -1,3 +1,3 @@
-# eds-tools
+# eds-utils
 
-A collection of EDS tools
+A collection of EDS utilities

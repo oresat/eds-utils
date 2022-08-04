@@ -13,9 +13,9 @@ PROGRAMS = {
 }
 
 
-def eds_tools():
+def eds_utils():
     print('')
-    print('eds-tools v' + __version__)
+    print('eds-utils v' + __version__)
     print('')
 
     print('command : description')
@@ -26,7 +26,7 @@ def eds_tools():
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        eds_tools()
+        eds_utils()
     elif sys.argv[1] == 'validate-eds':
         validate_eds(sys.argv[2:])
     elif sys.argv[1] == 'eds2dcf':
@@ -34,4 +34,4 @@ if __name__ == "__main__":
     elif sys.argv[1] == 'eds-editor':
         eds_editor(sys.argv[2:])
     else:
-        eds_tools()
+        eds_utils()
