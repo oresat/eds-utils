@@ -15,8 +15,8 @@ def eds2dcf(sys_args=None):
     name = 'eds2dcf'
     parser = argparse.ArgumentParser(description=EDS2DCF_DESCRIPTION, prog=name)
     parser.add_argument('filepath', metavar='FILEPATH', help='filepath to EDS file')
-    parser.add_argument('node_id', help='set the node ID')
-    parser.add_argument('node_name', help='set the node name')
+    parser.add_argument('node_id', metavar='NODE_ID', help='set the node ID')
+    parser.add_argument('node_name', metavar='NODE_NAME', help='set the node name')
     parser.add_argument('-b', '--baud-rate', type=int, default=1000,
                         help='set the baud rate (in kbps)')
     parser.add_argument('-j', '--net-number', type=int, default=0, help='set the net number')
@@ -28,7 +28,11 @@ def eds2dcf(sys_args=None):
     parser.add_argument('-o', '--output', default='', help='output file path')
     args = parser.parse_args(sys_args)
 
-    eds, errors = read_eds(args.filepath)
+    try:
+        eds, errors = read_eds(args.filepath)
+    except FileNotFoundError as exc:
+        print(exc)
+        sys.exit(1)
 
     eds.device_commissioning.node_id = str2int(args.node_id)
     eds.device_commissioning.node_name = args.node_name

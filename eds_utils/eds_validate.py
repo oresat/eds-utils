@@ -16,7 +16,11 @@ def eds_validate(sys_args=None):
     parser.add_argument('-s', '--silence', action='store_true', help='silence prints to stderr')
     args = parser.parse_args(sys_args)
 
-    _, errors = read_eds(args.filepath)
+    try:
+        _, errors = read_eds(args.filepath)
+    except FileNotFoundError as exc:
+        print(exc)
+        sys.exit(1)
 
     if not args.silence:
         for i in errors:
