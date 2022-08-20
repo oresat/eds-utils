@@ -9,6 +9,7 @@ Utilities
 - **eds-editor:** GTK4-based GUI to edit eds/dcf files
 - **eds-validate:** quick eds/dcf validator
 - **eds2dcf:** quick eds to dcf converter
+- **eds-convert:** quick eds/dcf to md/rst converter
 
 
 How To Run (From Repo)
@@ -19,3 +20,4 @@ How To Run (From Repo)
 - To run the eds-editor (requires GTK4): ``$ python -m eds_utils eds-editor``
 - To run the eds-validate: ``$ python -m eds_utils eds-validate EDS_FILE``
 - To run the eds-editor: ``$ python -m eds_utils eds2dcf EDS_FILE DCF_FILE``
+- To run the eds-convert: ``$ python -m eds_utils eds-convert INPUT OUTPUT``
