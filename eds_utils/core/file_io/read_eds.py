@@ -3,8 +3,8 @@
 import re
 from datetime import datetime
 
-from .. import DataType, ObjectType, AccessType, BAUD_RATE
-from ..eds import EDS, FileInfo, DeviceInfo
+from .. import DataType, ObjectType, AccessType, BAUD_RATE, str2int
+from ..eds import EDS, FileInfo, DeviceInfo, DeviceCommissioning
 from ..objects import Variable, Array, Record
 
 VARIABLE_ENTRIES = [
@@ -115,6 +115,9 @@ def read_eds(file_path: str) -> (EDS, list):
         elif header == '[DeviceInfo]':
             eds.device_info, err = _read_device_info(header, raw)
             errors += err
+        elif header == '[DeviceComissioning]':  # only in DCFs, only one 'm' in header
+            eds.device_commissioning, err = _read_device_commisioning(header, raw)
+            errors += err
         elif header == '[DummyUsage]':
             continue  # TODO
         elif header == '[Comments]':
@@ -125,8 +128,6 @@ def read_eds(file_path: str) -> (EDS, list):
             continue  # TODO ?
         elif header == '[ManufacturerObjects]':
             continue  # TODO ?
-        elif header == '[DeviceComissioning]':  # only in DCFs, only one 'm' in header
-            continue  # TODO
         else:
             errors.append(f'Unknown header: {header}')
 
@@ -458,6 +459,70 @@ def _read_device_info(header: str, lines: dict) -> (DeviceInfo, list):
     return device_info, errors
 
 
+def _read_device_commisioning(header: str, lines: dict) -> (DeviceCommissioning, list):
+    '''
+    Read the device commissioning section.
+
+    Paramters
+    ---------
+    header: str
+        The header for the section.
+    lines: dict
+        The entries for the section as dictionary.
+
+    Returns
+    -------
+    DeviceCommissioning:
+        The device commissioning info pulled from the section lines.
+    list:
+        List of errors that occured when reading in the section lines.
+    '''
+
+    errors = []
+    device_comm = DeviceCommissioning()
+
+    try:
+        device_comm.node_id = _read_int_value(header, lines, 'NodeID')
+    except ValueError as exc:
+        errors.append(str(exc))
+
+    try:
+        device_comm.node_name = lines['NodeName']
+    except KeyError:
+        errors.append(f'NodeName was missing from {header}')
+
+    try:
+        temp = _read_int_value(header, lines, 'Baudrate')
+        if temp in BAUD_RATE:
+            device_comm.baud_rate = temp
+        else:
+            errors.append(f'Baudrate in {header} was not a valid CANopen baud rate')
+    except ValueError as exc:
+        errors.append(str(exc))
+
+    try:
+        device_comm.net_number = _read_int_value(header, lines, 'NetNumber')
+    except ValueError as exc:
+        errors.append(str(exc))
+
+    try:
+        device_comm.network_name = lines['NetworkName']
+    except KeyError:
+        errors.append(f'NetworkName was missing from {header}')
+
+    try:
+        device_comm.canopen_manager = _read_bool_value(header, lines, 'CANopenManager')
+    except ValueError as exc:
+        errors.append(str(exc))
+
+    try:
+        device_comm.lss_serialnumber = _read_bool_value(header, lines, 'LSS_SerialNumber')
+    except ValueError as exc:
+        errors.append(str(exc))
+
+    return device_comm, errors
+
+
 def _read_bool_value(header: str, lines: dict, name: str) -> bool:
     '''
     Read the named value from the section and convert value to a boolean.
@@ -511,7 +576,7 @@ def _read_int_value(header: str, lines: dict, name: str) -> int:
 
     try:
         temp = lines[name]
-        value = int(temp)
+        value = str2int(temp)
     except KeyError:
         raise ValueError(f'{name} was missing from {header}')
     except ValueError:
