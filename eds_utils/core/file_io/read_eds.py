@@ -30,7 +30,24 @@ ARRAY_RECORD_ENTRIES = [
 
 
 def read_eds(file_path: str) -> (EDS, list):
-    '''load an eds/dcf file'''
+    '''
+    Read a EDS/DCF file.
+
+    Paramters
+    ---------
+    file_path: str
+        Path to EDS/DCF file
+
+    Returns
+    -------
+    EDS:
+        The eds object.
+    list:
+        List of errors that occured when reading in the EDS/DCF.
+    '''
+
+    errors = []
+    var = Variable()
 
     eds = EDS()
     errors = []
@@ -117,6 +134,24 @@ def read_eds(file_path: str) -> (EDS, list):
 
 
 def _read_variable(header: str, lines: dict, comments: str) -> (Variable, list):
+    '''
+    Read a variable section.
+
+    Paramters
+    ---------
+    header: str
+        The header for the section.
+    lines: dict
+        The entries for the section as dictionary.
+
+    Returns
+    -------
+    Variable:
+        The variable pulled from the section lines.
+    list:
+        List of errors that occured when reading in the section lines.
+    '''
+
     errors = []
     var = Variable()
     var.comments = comments
@@ -170,6 +205,24 @@ def _read_variable(header: str, lines: dict, comments: str) -> (Variable, list):
 
 
 def _read_array(header: str, lines: dict, comments: str) -> (Array, list):
+    '''
+    Read a array section.
+
+    Paramters
+    ---------
+    header: str
+        The header for the section.
+    lines: dict
+        The entries for the section as dictionary.
+
+    Returns
+    -------
+    Array:
+        The array pulled from the section lines.
+    list:
+        List of errors that occured when reading in the section lines.
+    '''
+
     errors = []
     arr = Array('')
     arr.comments = comments
@@ -193,6 +246,24 @@ def _read_array(header: str, lines: dict, comments: str) -> (Array, list):
 
 
 def _read_record(header: str, lines: dict, comments: str) -> (Record, list):
+    '''
+    Read a record section.
+
+    Paramters
+    ---------
+    header: str
+        The header for the section.
+    lines: dict
+        The entries for the section as dictionary.
+
+    Returns
+    -------
+    Record:
+        The record pulled from the section lines.
+    list:
+        List of errors that occured when reading in the section lines.
+    '''
+
     errors = []
     rec = Record('')
     rec.comments = comments
@@ -216,6 +287,24 @@ def _read_record(header: str, lines: dict, comments: str) -> (Record, list):
 
 
 def _read_file_info(header: str, lines: dict) -> (FileInfo, list):
+    '''
+    Read the device info section.
+
+    Paramters
+    ---------
+    header: str
+        The header for the section.
+    lines: dict
+        The entries for the section as dictionary.
+
+    Returns
+    -------
+    FileInfo:
+        The file info pulled from the section lines.
+    list:
+        List of errors that occured when reading in the section lines.
+    '''
+
     errors = []
     file_info = FileInfo()
 
@@ -225,20 +314,14 @@ def _read_file_info(header: str, lines: dict) -> (FileInfo, list):
         errors.append(f'FileName was missing from {header}')
 
     try:
-        temp = lines['FileVersion']
-        file_info.file_version = int(temp)
-    except KeyError:
-        errors.append(f'FileVersion was missing from {header}')
-    except ValueError:
-        errors.append(f'FileVersion was incorrectly formated in {header}')
+        file_info.file_version = _read_int_value(header, lines, 'FileVersion')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
-        temp = lines['FileRevision']
-        file_info.file_revision = int(temp)
-    except KeyError:
-        errors.append(f'FileRevision was missing from {header}')
-    except ValueError:
-        errors.append(f'FileRevision was incorrectly formated in {header}')
+        file_info.file_revision = _read_int_value(header, lines, 'FileRevision')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
         file_info.eds_version = lines['EDSVersion']
@@ -252,13 +335,10 @@ def _read_file_info(header: str, lines: dict) -> (FileInfo, list):
         errors.append(f'Description was missing from {header}')
 
     try:
-        time = lines['CreationTime']
-        date = lines['CreationDate']
-        file_info.creation_dt = datetime.now().strptime(f'{date} {time}', '%m-%d-%Y %I:%M%p')
-    except KeyError:
-        errors.append(f'CreationTime or CreationDate was missing from {header}')
-    except ValueError:
-        errors.append(f'CreationTime or CreationDate was incorrectly formated in {header}')
+        file_info.creation_dt = _read_datetime_value(header, lines, 'CreationTime',
+                                                     'CreationDate')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
         file_info.created_by = lines['CreatedBy']
@@ -266,13 +346,10 @@ def _read_file_info(header: str, lines: dict) -> (FileInfo, list):
         errors.append(f'CreatedBy was missing from {header}')
 
     try:
-        time = lines['ModificationTime']
-        date = lines['ModificationDate']
-        file_info.modification_dt = datetime.now().strptime(f'{date} {time}', '%m-%d-%Y %I:%M%p')
-    except KeyError:
-        errors.append(f'ModificationTime or ModificationDate was missing from {header}')
-    except ValueError:
-        errors.append(f'ModificationTime or ModificationDate was incorrectly formated in {header}')
+        file_info.modification_dt = _read_datetime_value(header, lines, 'ModificationTime',
+                                                         'ModificationDate')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
         file_info.modified_by = lines['ModifiedBy']
@@ -283,6 +360,24 @@ def _read_file_info(header: str, lines: dict) -> (FileInfo, list):
 
 
 def _read_device_info(header: str, lines: dict) -> (DeviceInfo, list):
+    '''
+    Read the device info section.
+
+    Paramters
+    ---------
+    header: str
+        The header for the section.
+    lines: dict
+        The entries for the section as dictionary.
+
+    Returns
+    -------
+    DeviceInfo:
+        The device info pulled from the section lines.
+    list:
+        List of errors that occured when reading in the section lines.
+    '''
+
     errors = []
     device_info = DeviceInfo()
 
@@ -292,12 +387,9 @@ def _read_device_info(header: str, lines: dict) -> (DeviceInfo, list):
         errors.append(f'VendorName was missing from {header}')
 
     try:
-        temp = lines['VendorNumber']
-        device_info.vender_number = int(temp)
-    except KeyError:
-        errors.append(f'VendorNumber was missing from {header}')
-    except ValueError:
-        errors.append(f'VendorNumber was incorrectly formated in {header}')
+        device_info.vender_number = _read_int_value(header, lines, 'VendorNumber')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
         device_info.product_name = lines['ProductName']
@@ -305,20 +397,14 @@ def _read_device_info(header: str, lines: dict) -> (DeviceInfo, list):
         errors.append(f'ProductName was missing from {header}')
 
     try:
-        temp = lines['ProductNumber']
-        device_info.product_number = int(temp)
-    except KeyError:
-        errors.append(f'ProductNumber was missing from {header}')
-    except ValueError:
-        errors.append(f'ProductNumber was incorrectly formated in {header}')
+        device_info.product_number = _read_int_value(header, lines, 'ProductNumber')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
-        temp = lines['RevisionNumber']
-        device_info.revision_number = int(temp)
-    except KeyError:
-        errors.append(f'RevisionNumber was missing from {header}')
-    except ValueError:
-        errors.append(f'RevisionNumber was incorrectly formated in {header}')
+        device_info.revision_number = _read_int_value(header, lines, 'RevisionNumber')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
         device_info.order_code = lines['OrderCode']
@@ -327,67 +413,146 @@ def _read_device_info(header: str, lines: dict) -> (DeviceInfo, list):
 
     for i in BAUD_RATE:
         try:
-            temp = lines[f'BaudRate_{i}']
-            device_info.baud_rate[i] = bool(int(temp))
-        except KeyError:
-            errors.append(f'BaudRate_{i} was missing from {header}')
-        except ValueError:
-            errors.append(f'BaudRate_{i} was incorrectly formated in {header}')
+            device_info.baud_rate[i] = _read_bool_value(header, lines, f'BaudRate_{i}')
+        except ValueError as exc:
+            errors.append(str(exc))
 
     try:
-        temp = lines['SimpleBootUpMaster']
-        device_info.simple_boot_up_master = bool(int(temp))
-    except KeyError:
-        errors.append(f'SimpleBootUpMaster was missing from {header}')
-    except ValueError:
-        errors.append(f'SimpleBootUpMaster was incorrectly formated in {header}')
+        device_info.simple_boot_up_master = _read_bool_value(header, lines,
+                                                             'SimpleBootUpMaster')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
-        temp = lines['SimpleBootUpSlave']
-        device_info.simple_boot_up_slave = bool(int(temp))
-    except KeyError:
-        errors.append(f'SimpleBootUpSlave was missing from {header}')
-    except ValueError:
-        errors.append(f'SimpleBootUpSlave was incorrectly formated in {header}')
+        device_info.simple_boot_up_slave = _read_bool_value(header, lines,
+                                                            'SimpleBootUpSlave')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
-        temp = lines['Granularity']
-        device_info.grandularity = int(temp)
-    except KeyError:
-        errors.append(f'Granularity was missing from {header}')
-    except ValueError:
-        errors.append(f'Granularity was incorrectly formated in {header}')
+        device_info.grandularity = _read_int_value(header, lines, 'Granularity')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
-        temp = lines['DynamicChannelsSupported']
-        device_info.dynamic_channel_supperted = bool(int(temp))
-    except KeyError:
-        errors.append(f'DynamicChannelsSupported was missing from {header}')
-    except ValueError:
-        errors.append(f'DynamicChannelsSupported was incorrectly formated in {header}')
+        device_info.dynamic_channel_supperted = _read_bool_value(header, lines,
+                                                                 'DynamicChannelsSupported')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
-        temp = lines['NrOfRXPDO']
-        device_info.num_of_rpdo = int(temp)
-    except KeyError:
-        errors.append(f'NrOfRXPDO was missing from {header}')
-    except ValueError:
-        errors.append(f'NrOfRXPDO was incorrectly formated in {header}')
+        device_info.num_of_rpdo = _read_int_value(header, lines, 'NrOfRXPDO')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
-        temp = lines['NrOfTXPDO']
-        device_info.num_of_tpdo = int(temp)
-    except KeyError:
-        errors.append(f'NrOfTXPDO was missing from {header}')
-    except ValueError:
-        errors.append(f'NrOfTXPDO was incorrectly formated in {header}')
+        device_info.num_of_tpdo = _read_int_value(header, lines, 'NrOfTXPDO')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     try:
-        temp = lines['LSS_Supported']
-        device_info.lss_supported = int(temp)
-    except KeyError:
-        errors.append(f'LSS_Supportedwas missing from {header}')
-    except ValueError:
-        errors.append(f'LSS_Supported was incorrectly formated in {header}')
+        device_info.lss_supported = _read_bool_value(header, lines, 'LSS_Supported')
+    except ValueError as exc:
+        errors.append(str(exc))
 
     return device_info, errors
+
+
+def _read_bool_value(header: str, lines: dict, name: str) -> bool:
+    '''
+    Read the named value from the section and convert value to a boolean.
+
+    Paramters
+    ---------
+    header: str
+        The header for the section.
+    lines: dict
+        The entries for the section as dictionary.
+    name: str
+        The name of the int value.
+
+    Raises
+    ------
+    ValueError:
+        Values were mising or misformatted.
+
+    Returns
+    -------
+    bool:
+        The value as a bool.
+    '''
+
+    return bool(_read_int_value(header, lines, name))
+
+
+def _read_int_value(header: str, lines: dict, name: str) -> int:
+    '''
+    Read the named value from the section and convert value to a integer.
+
+    Paramters
+    ---------
+    header: str
+        The header for the section.
+    lines: dict
+        The entries for the section as dictionary.
+    name: str
+        The name of the int value.
+
+    Raises
+    ------
+    ValueError:
+        Value were mising or misformatted.
+
+    Returns
+    -------
+    int:
+        The value as a int.
+    '''
+
+    try:
+        temp = lines[name]
+        value = int(temp)
+    except KeyError:
+        raise ValueError(f'{name} was missing from {header}')
+    except ValueError:
+        raise ValueError(f'{name} was incorrectly formatted in {header}')
+
+    return value
+
+
+def _read_datetime_value(header: str, lines: dict, time_name: str, date_name: str) -> datetime:
+    '''
+    Read the time and date values from the section and convert values to a `datetime` object.
+
+    Paramters
+    ---------
+    header: str
+        The header for the section.
+    lines: dict
+        The entries for the section as dictionary.
+    time_name: str
+        The name of the time value.
+    time_name: str
+        The name of the date value.
+
+    Raises
+    ------
+    ValueError:
+        Values were mising or misformatted.
+
+    Returns
+    -------
+    datetime:
+        The time and date values as a datetime object.
+    '''
+
+    try:
+        time = lines[time_name]
+        date = lines[date_name]
+        value = datetime.now().strptime(f'{date} {time}', '%m-%d-%Y %I:%M%p')
+    except KeyError:
+        raise ValueError(f'{time_name} or {date_name} was missing from {header}')
+    except ValueError:
+        raise ValueError(f'{time_name} or {date_name} was incorrectly formatted in {header}')
+
+    return value
