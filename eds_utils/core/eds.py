@@ -83,7 +83,7 @@ class EDS:
 
     def __setitem__(self, index: int, item):
         if index in self._data:
-            raise ValueError('index already exist')
+            raise ValueError(f'index 0x{index:X} already exist')
 
         self._data[index] = item
 
@@ -91,12 +91,12 @@ class EDS:
         '''Insert a object into the object dictionary'''
 
         if index in self._data:
-            raise ValueError('index already exist')
+            raise ValueError(f'index 0x{index:X} already exist')
 
         if subindex is None:  # use only index
             self._data[index] = item
         elif subindex in self._data:  # use index and subindex
-            raise ValueError('subindex already exist')
+            raise ValueError(f'subindex 0x{subindex:X} already exist for index 0x{index:X}')
         elif not isinstance(item, Variable):
             raise ValueError('cannot insert non-Variable into subindex')
         else:
@@ -235,8 +235,8 @@ class EDS:
         objects = []
 
         for i in self._data:
-            if (i > 0x1000 and i <= 0x1FFF and i not in self.MANDATORY_OBJECTS) \
-                    or (i > 0x6000 and i <= 0xFFFF):
+            if (i >= 0x1000 and i <= 0x1FFF and i not in self.MANDATORY_OBJECTS) \
+                    or (i >= 0x6000 and i <= 0xFFFF):
                 objects.append(i)
 
         return objects
@@ -248,7 +248,7 @@ class EDS:
         objects = []
 
         for i in self._data:
-            if i > 0x2000 and i <= 0x5FFF:
+            if i >= 0x2000 and i <= 0x5FFF:
                 objects.append(i)
 
         return objects

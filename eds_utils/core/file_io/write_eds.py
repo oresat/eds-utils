@@ -2,7 +2,7 @@
 
 from os.path import basename, splitext
 
-from .. import BAUD_RATE
+from .. import BAUD_RATE, ObjectType
 from ..objects import Variable, Array, Record
 from ..eds import EDS
 
@@ -132,9 +132,9 @@ def _objects_lines(eds: EDS, indexes: list, dcf=False) -> list:
         obj = eds[i]
         if isinstance(obj, Variable):
             lines += _variable_lines(obj, i, dcf=dcf)
-        if isinstance(obj, Array):
+        elif isinstance(obj, Array):
             lines += _array_lines(obj, i, dcf=dcf)
-        if isinstance(obj, Record):
+        elif isinstance(obj, Record):
             lines += _record_lines(obj, i, dcf=dcf)
 
     return lines
@@ -155,7 +155,7 @@ def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False) ->
     lines.append(f'ParameterName={variable.parameter_name}')
     if dcf and variable.denotation:
         lines.append(f'Denotation={variable.denotation}')
-    lines.append('ObjectType=0x7')
+    lines.append(f'ObjectType={ObjectType.VAR.to_str()}')
     lines.append(f'DataType={variable.data_type.to_str()}')
     lines.append(f'AccessType={variable.access_type.to_str()}')
     if variable.default_value:  # optional
@@ -183,7 +183,7 @@ def _array_lines(array: Array, index: int, dcf=False) -> list:
     lines.append(f'ParameterName={array.parameter_name}')
     if dcf and array.denotation:
         lines.append(f'Denotation={array.denotation}')
-    lines.append('ObjectType=0x8')
+    lines.append(f'ObjectType={ObjectType.ARRAY.to_str()}')
     lines.append(f'SubNumber={len(array)}')
     lines.append('')
 
@@ -205,7 +205,7 @@ def _record_lines(record: Record, index: int, dcf=False) -> list:
     lines.append(f'ParameterName={record.parameter_name}')
     if dcf and record.denotation:
         lines.append(f'Denotation={record.denotation}')
-    lines.append('ObjectType=0x8')
+    lines.append(f'ObjectType={ObjectType.RECORD.to_str()}')
     lines.append(f'SubNumber={len(record)}')
     lines.append('')
 

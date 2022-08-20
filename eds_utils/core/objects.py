@@ -39,6 +39,7 @@ class Record:
         var = Variable()
         var.parameter_name = 'Highest sub-index supported'
         var.access_type = AccessType.CONST
+        var.data_type = DataType.UNSIGNED8
         self._data[0] = var
 
     def __len__(self) -> int:

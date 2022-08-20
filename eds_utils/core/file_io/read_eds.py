@@ -3,7 +3,7 @@
 import re
 from datetime import datetime
 
-from .. import DataType, ObjectType, AccessType, str2int, BAUD_RATE
+from .. import DataType, ObjectType, AccessType, BAUD_RATE
 from ..eds import EDS, FileInfo, DeviceInfo
 from ..objects import Variable, Array, Record
 
@@ -82,6 +82,11 @@ def read_eds(file_path: str) -> (EDS, list):
             var, err = _read_variable(header, raw, comments)
 
             errors += err
+
+            # subindex 0 is the length of the array or record and must be a uint8
+            if header.endswith('sub0]') and var.data_type != DataType.UNSIGNED8:
+                errors.append(f'subindex 0 for {header} was not a UNSIGNED8')
+                var.data_type = DataType.UNSIGNED8
 
             index = int(header[1:5], 16)
             subindex = int(header[8:-1], 16)
