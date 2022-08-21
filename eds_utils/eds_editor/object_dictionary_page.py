@@ -1,15 +1,17 @@
 from gi.repository import Gtk
 
+from .add_object_dialog import AddObjectDialog
 from ..core import DataType, ObjectType, AccessType, str2int
 from ..core.eds import EDS
 
 
 class ObjectDictionaryPage(Gtk.ScrolledWindow):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, parent_window):
+        super().__init__()
 
         self.eds = None
         self.selected_obj = None
+        self.parent_window = parent_window
 
         box = Gtk.Box(homogeneous=True)
         self.set_child(box)
@@ -28,34 +30,26 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         self.search_entry.connect('changed', self.on_search_entry)
         box_search.append(self.search_entry)
 
+        # these will be set by refresh_treeview
+        self.tree_filter = None
+        self.od_treeview = None
+
         button = Gtk.Button(label='Expand All')
         button.connect('clicked', self.on_expand_clicked)
         box_search.append(button)
 
-        scrolled_window = Gtk.ScrolledWindow()
-        scrolled_window.set_vexpand(True)
-        scrolled_window.set_hexpand(True)
-        scrolled_window.set_has_frame(True)
-        box_tree.append(scrolled_window)
-
-        self.indexes_store = Gtk.TreeStore(str, str)
-        self.tree_filter = self.indexes_store.filter_new()
-        self.tree_filter.set_visible_func(self.tree_filter_func)
-        self.od_treeview = Gtk.TreeView(model=self.tree_filter)
-        self.od_treeview.set_enable_tree_lines(True)
-        for i, column_title in enumerate(['Object', 'Parameter Name']):
-            renderer = Gtk.CellRendererText()
-            column = Gtk.TreeViewColumn(column_title, renderer, text=i)
-            self.od_treeview.append_column(column)
-        select = self.od_treeview.get_selection()
-        select.connect('changed', self.on_tree_selection_changed)
-        scrolled_window.set_child(self.od_treeview)
+        self.od_scrolled_window = Gtk.ScrolledWindow()
+        self.od_scrolled_window.set_vexpand(True)
+        self.od_scrolled_window.set_hexpand(True)
+        self.od_scrolled_window.set_has_frame(True)
+        box_tree.append(self.od_scrolled_window)
 
         box_button = Gtk.Box()
         box_button.set_halign(Gtk.Align.CENTER)
         box_tree.append(box_button)
 
         button = Gtk.Button(label='Add')
+        button.connect('clicked', self.add_object_on_click)
         box_button.append(button)
 
         button = Gtk.Button(label='Remove')
@@ -190,8 +184,9 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
     def on_search_entry(self, entry) -> None:
         '''Callback on search filter entry for parameter names'''
 
-        self.search_filter_text = self.search_entry.get_text().lower()
-        self.tree_filter.refilter()
+        if self.tree_filter:
+            self.search_filter_text = self.search_entry.get_text().lower()
+            self.tree_filter.refilter()
 
     def tree_filter_func(self, model, iter, data) -> bool:
         '''Callback on refilter to change row visibility
@@ -292,14 +287,44 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
 
     def load_eds(self, eds: EDS):
         self.eds = eds
+        self.refresh_treeview()
 
+    def refresh_treeview(self):
+
+        indexes_store = Gtk.TreeStore(str, str)
+        self.tree_filter = indexes_store.filter_new()
+        self.tree_filter.set_visible_func(self.tree_filter_func)
+        self.od_treeview = Gtk.TreeView()
+        self.od_scrolled_window.set_child(self.od_treeview)
+        self.od_treeview.set_model(self.tree_filter)
+        self.od_treeview.set_enable_tree_lines(True)
+
+        for i, column_title in enumerate(['Object', 'Parameter Name']):
+            renderer = Gtk.CellRendererText()
+            column = Gtk.TreeViewColumn(column_title, renderer, text=i)
+            self.od_treeview.append_column(column)
+
+        select = self.od_treeview.get_selection()
+        select.connect('changed', self.on_tree_selection_changed)
+
+        # fill tree view with object dictionary data
         for index in self.eds.indexes:
             index_str = f'0x{index:X}'
             index_section = self.eds[index]
-            self.indexes_store.append(None, [index_str, index_section.parameter_name])
+            indexes_store.append(None, [index_str, index_section.parameter_name])
             if index_section.object_type != ObjectType.VAR:
                 for subindex in self.eds[index].subindexes:
                     subindex_str = f'0x{subindex:X}'
                     subindex_section = self.eds[index][subindex]
-                    self.indexes_store.append(self.indexes_store[-1].iter,
-                                              [subindex_str, subindex_section.parameter_name])
+                    indexes_store.append(indexes_store[-1].iter,
+                                         [subindex_str, subindex_section.parameter_name])
+
+    def add_object_on_click(self, button):
+
+        add_object_dialog = AddObjectDialog(self.parent_window, self.eds)
+        add_object_dialog.connect('response', self.add_object_response)
+        add_object_dialog.show()
+
+    def add_object_response(self, dialog, response):
+
+        self.refresh_treeview()
