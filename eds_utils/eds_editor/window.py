@@ -7,6 +7,7 @@ from .object_dictionary_page import ObjectDictionaryPage
 from .device_commissioning_page import DeviceCommissioningPage
 from ..core.file_io.read_eds import read_eds
 from ..core.file_io.write_eds import write_eds
+from .errors_dialog import ErrorsDialog
 
 
 class AppWindow(Gtk.ApplicationWindow):
@@ -15,6 +16,8 @@ class AppWindow(Gtk.ApplicationWindow):
 
         self.eds = None
         self.file_path = None
+
+        self.errors_dialog = ErrorsDialog(self)
 
         self.notebook = Gtk.Notebook()
         self.notebook.hide()
@@ -77,7 +80,11 @@ class AppWindow(Gtk.ApplicationWindow):
     def open_file(self, file_path):
         self.file_path = file_path
         self.header.set_title_widget(Gtk.Label.new(basename(file_path)))
-        self.eds, _ = read_eds(file_path)
+        self.eds, errors = read_eds(file_path)
+
+        if errors:
+            self.errors_dialog.errors = errors
+            self.errors_dialog.show()
 
         self.gi_page.load_eds(self.eds)
         self.od_page.load_eds(self.eds)
