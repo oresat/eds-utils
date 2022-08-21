@@ -16,7 +16,8 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
         frame.set_valign(Gtk.Align.START)
         self.set_child(frame)
 
-        grid = Gtk.Grid(column_spacing=5, row_spacing=5, margin_top=5, margin_bottom=5,
+        grid = Gtk.Grid(column_spacing=5, row_spacing=5, row_homogeneous=True,
+                        margin_top=5, margin_bottom=5,
                         margin_start=5, margin_end=5)
         frame.set_child(grid)
 
@@ -53,6 +54,7 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
         label = Gtk.Label.new('Baud Rate:')
         label.set_halign(Gtk.Align.START)
         grid.attach(label, column=0, row=2, width=1, height=2)
+        self.baud_rate_buttons = []
         first_radio_button = None
         for i in range(len(BAUD_RATE)):
             radio_button = Gtk.CheckButton.new()
@@ -63,9 +65,9 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
             else:
                 radio_button.set_group(first_radio_button)
 
-            radio_button.connect('toggled', self.on_dc_kbps_selected)
             column = i % 4  # 0 - 3
             row = i // 4  # 0 or 1
+            self.baud_rate_buttons.append(radio_button)
             grid.attach(radio_button, column=1 + column, row=2 + row, width=1, height=1)
         radio_button.set_active(True)  # 1000 kpbs
 
@@ -85,24 +87,48 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
         grid.attach(label, column=2, row=4, width=1, height=1)
         grid.attach(self.canopen_manager, column=3, row=4, width=1, height=1)
 
-    def on_dc_kbps_selected(self, widget, data=None):
-        print(widget.get_label() + ' is selected')
+        button = Gtk.Button(label='Update')
+        button.set_halign(Gtk.Align.END)
+        button.set_valign(Gtk.Align.END)
+        button.connect('clicked', self.on_update_button_clicked)
+        grid.attach(button, column=0, row=5, width=2, height=2)
+
+        button = Gtk.Button(label='Cancel')
+        button.set_halign(Gtk.Align.START)
+        button.set_valign(Gtk.Align.END)
+        button.connect('clicked', self.on_cancel_button_clicked)
+        grid.attach(button, column=2, row=5, width=2, height=2)
 
     def load_eds(self, eds: EDS):
         self.eds = eds
 
+        # a set all the after loading the eds
+        self.on_cancel_button_clicked(None)
+
+    def on_update_button_clicked(self, button):
+
         device_comm = self.eds.device_commissioning
-        if device_comm:
-            self.node_name.set_text(device_comm.node_name)
-            self.node_id.set_value(device_comm.node_id)
-            self.net_number.set_value(device_comm.net_number)
-            self.network_name.set_text(device_comm.network_name)
-            self.canopen_manager.set_state(device_comm.canopen_manager)
-            self.lss_serial_num.set_value(device_comm.lss_serialnumber)
-        else:
-            self.node_name.set_text('')
-            self.node_id.set_value(0)
-            self.net_number.set_value(0)
-            self.network_name.set_text('')
-            self.canopen_manager.set_state(False)
-            self.lss_serial_num.set_value(0)
+        device_comm.node_name = self.node_name.get_text()
+        device_comm.node_id = int(self.node_id.get_value())
+        device_comm.net_number = int(self.net_number.get_value())
+        device_comm.network_name = self.network_name.get_text()
+        for i in self.baud_rate_buttons:
+            if i.get_active():
+                index = self.baud_rate_buttons.index(i)
+                device_comm.baud_rate = BAUD_RATE[index]
+                break
+        self.baud_rate_buttons[index].set_active(True)
+        device_comm.canopen_manager = self.canopen_manager.get_state()
+        device_comm.lss_serialnumber = int(self.lss_serial_num.get_value())
+
+    def on_cancel_button_clicked(self, button):
+
+        device_comm = self.eds.device_commissioning
+        self.node_name.set_text(device_comm.node_name)
+        self.node_id.set_value(device_comm.node_id)
+        self.net_number.set_value(device_comm.net_number)
+        self.network_name.set_text(device_comm.network_name)
+        index = BAUD_RATE.index(device_comm.baud_rate)
+        self.baud_rate_buttons[index].set_active(True)
+        self.canopen_manager.set_state(device_comm.canopen_manager)
+        self.lss_serial_num.set_value(device_comm.lss_serialnumber)
