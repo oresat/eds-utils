@@ -87,6 +87,9 @@ class EDS:
 
         self._data[index] = item
 
+    def __delitem__(self, index: int):
+        del self._data[index]
+
     def insert(self, index: int, subindex: int, item) -> None:
         '''Insert a object into the object dictionary'''
 

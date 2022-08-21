@@ -1,5 +1,6 @@
 from gi.repository import Gtk
 
+from .errors_dialog import ErrorsDialog
 from .add_object_dialog import AddObjectDialog
 from ..core import DataType, ObjectType, AccessType, str2int
 from ..core.eds import EDS
@@ -11,6 +12,8 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
 
         self.eds = None
         self.selected_obj = None
+        self.selected_index = None
+        self.selected_subindex = None
         self.parent_window = parent_window
 
         box = Gtk.Box(homogeneous=True)
@@ -53,6 +56,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         box_button.append(button)
 
         button = Gtk.Button(label='Remove')
+        button.connect('clicked', self.remove_object_on_click)
         box_button.append(button)
 
         button = Gtk.Button(label='Move')
@@ -167,7 +171,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         if self.selected_obj is None:
             return
 
-        self.selected_obj.pParameter_name = self.obj_parameter_name.get_text()
+        self.selected_obj.parameter_name = self.obj_parameter_name.get_text()
         buf = self.obj_comment.get_buffer()
         self.selected_obj.comments = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
         data_type = self.obj_data_type.get_selected()
@@ -179,7 +183,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
 
     def on_cancel_button_clicked(self, button):
 
-        self._loaf_selection()
+        self._load_selection()
 
     def on_search_entry(self, entry) -> None:
         '''Callback on search filter entry for parameter names'''
@@ -218,7 +222,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             self.od_treeview.collapse_all()
             button.set_label('Expand All')
 
-    def _loaf_selection(self):
+    def _load_selection(self):
 
         if self.selected_obj is None:
             return
@@ -258,12 +262,16 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             index_str = model[treeiter][0]
             index = str2int(index_str)
             self.selected_obj = self.eds[index]
+            self.selected_index = index
+            self.selected_subindex = None
         else:  # subindex
             index_str = model[treeiter].parent[0]
             index = str2int(index_str)
             subindex_str = model[treeiter][0]
             subindex = str2int(subindex_str)
             self.selected_obj = self.eds[index][subindex]
+            self.selected_index = index
+            self.selected_subindex = subindex
 
             if subindex == 0:
                 self.obj_data_type.set_sensitive(False)
@@ -283,13 +291,17 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             self.obj_low_limit.show()
             self.obj_high_limit.show()
 
-        self._loaf_selection()
+        self._load_selection()
 
     def load_eds(self, eds: EDS):
         self.eds = eds
         self.refresh_treeview()
 
     def refresh_treeview(self):
+
+        self.selected_obj = None
+        self.selected_index = None
+        self.selected_subindex = None
 
         indexes_store = Gtk.TreeStore(str, str)
         self.tree_filter = indexes_store.filter_new()
@@ -326,5 +338,31 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         add_object_dialog.show()
 
     def add_object_response(self, dialog, response):
+
+        self.refresh_treeview()
+
+    def remove_object_on_click(self, button):
+
+        errors = []
+
+        if self.selected_index in self.eds.MANDATORY_OBJECTS:
+            errors.append(f'Cannot delete a mandotory object of 0x{self.selected_index:X}')
+
+        if self.selected_subindex == 0:
+            errors.append('Cannot delete subindex 0 of Arrays or Records')
+
+        if errors:
+            errors_dialog = ErrorsDialog(self.parent_window)
+            errors_dialog.errors = errors
+            errors_dialog.show()
+            return
+
+        if self.selected_index not in self.eds.indexes:
+            return  # nothing to delete
+
+        if self.selected_subindex is None:
+            del self.eds[self.selected_index]
+        elif self.selected_subindex in self.eds[self.selected_index].subindexes:
+            del self.eds[self.selected_index][self.selected_subindex]
 
         self.refresh_treeview()
