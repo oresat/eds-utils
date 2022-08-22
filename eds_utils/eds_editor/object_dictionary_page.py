@@ -2,6 +2,7 @@ from gi.repository import Gtk
 
 from .errors_dialog import ErrorsDialog
 from .add_object_dialog import AddObjectDialog
+from .copy_object_dialog import CopyObjectDialog
 from ..core import DataType, ObjectType, AccessType, str2int
 from ..core.eds import EDS
 
@@ -60,9 +61,11 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         box_button.append(button)
 
         button = Gtk.Button(label='Move')
+        button.connect('clicked', self.move_object_on_click)
         box_button.append(button)
 
         button = Gtk.Button(label='Copy')
+        button.connect('clicked', self.copy_object_on_click)
         box_button.append(button)
 
         frame = Gtk.Frame(label='Selected Object', margin_top=5, margin_bottom=5,
@@ -333,29 +336,35 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
 
     def add_object_on_click(self, button):
 
-        add_object_dialog = AddObjectDialog(self.parent_window, self.eds)
-        add_object_dialog.connect('response', self.add_object_response)
-        add_object_dialog.show()
+        dialog = AddObjectDialog(self.parent_window, self.eds)
+        dialog.connect('response', self.add_object_response)
+        dialog.show()
 
     def add_object_response(self, dialog, response):
 
         self.refresh_treeview()
 
-    def remove_object_on_click(self, button):
+    def check_selected(self):
 
         errors = []
 
         if self.selected_index in self.eds.MANDATORY_OBJECTS:
-            errors.append(f'Cannot delete a mandotory object of 0x{self.selected_index:X}')
+            errors.append(f'Cannot move/remove a mandotory object of 0x{self.selected_index:X}')
 
         if self.selected_subindex == 0:
-            errors.append('Cannot delete subindex 0 of Arrays or Records')
+            errors.append('Cannot move/remove subindex 0 of Arrays or Records')
 
         if errors:
             errors_dialog = ErrorsDialog(self.parent_window)
             errors_dialog.errors = errors
             errors_dialog.show()
-            return
+
+        return errors
+
+    def remove_object_on_click(self, button):
+
+        if self.check_selected():
+            return  # invalid object to remove
 
         if self.selected_index not in self.eds.indexes:
             return  # nothing to delete
@@ -366,3 +375,20 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             del self.eds[self.selected_index][self.selected_subindex]
 
         self.refresh_treeview()
+
+    def copy_object_on_click(self, button):
+
+        dialog = CopyObjectDialog(self.parent_window, self.eds, self.selected_index,
+                                  self.selected_subindex)
+        dialog.connect('response', self.add_object_response)
+        dialog.show()
+
+    def move_object_on_click(self, button):
+
+        if self.check_selected():
+            return  # invalid object to move
+
+        dialog = CopyObjectDialog(self.parent_window, self.eds, self.selected_index,
+                                  self.selected_subindex, move=True)
+        dialog.connect('response', self.add_object_response)
+        dialog.show()

@@ -153,8 +153,6 @@ class AddObjectDialog(Gtk.Dialog):
         else:
             self.eds[index] = obj
 
-        print(self.eds.indexes)
-
         self.response(1)
         self.destroy()
 
