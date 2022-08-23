@@ -1,6 +1,6 @@
 '''All the object class for the object dictionary'''
 
-from . import DataType, AccessType, ObjectType
+from . import DataType, AccessType, ObjectType, StorageLocation
 
 
 class Variable:
@@ -17,6 +17,7 @@ class Variable:
         self.access_type = AccessType.RW
         self.pdo_mapping = False
         self.object_type = ObjectType.VAR
+        self.storage_location = StorageLocation.RAM  # for CANopenNode support
 
 
 class Record:

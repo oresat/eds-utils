@@ -74,6 +74,7 @@ class EDS:
         self.device_info = DeviceInfo()
         self.device_commissioning = DeviceCommissioning()
         self.comment = ''
+        self.canopennode = False  # flag for canopennode eds/dcf
 
     def __len__(self):
         return len(self._data)

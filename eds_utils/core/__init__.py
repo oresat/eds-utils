@@ -89,3 +89,11 @@ class AccessType(Enum):
 
     def to_str(self):
         return self.name.lower()
+
+
+class StorageLocation(Enum):
+    '''for CANopenNode support'''
+    RAM = auto()
+    ROM = auto()
+    PERSIST_COMM = auto()
+    PERSIST_MFR = auto()
