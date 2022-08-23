@@ -6,9 +6,9 @@ from . import DataType, AccessType, ObjectType
 class Variable:
     '''Holds EDS variable data'''
 
-    def __init__(self):
+    def __init__(self, parameter_name='New Variable'):
         self.comments = ''
-        self.parameter_name = ''
+        self.parameter_name = parameter_name
         self.denotation = ''
         self.data_type = DataType.UNSIGNED32
         self.low_limit = ''
@@ -22,7 +22,7 @@ class Variable:
 class Record:
     '''Holds EDS record data'''
 
-    def __init__(self, parameter_name=''):
+    def __init__(self, parameter_name='New Record'):
         '''
         Parameters
         ----------
@@ -85,7 +85,7 @@ class Record:
 class Array(Record):
     '''Holds EDS array data'''
 
-    def __init__(self, parameter_name=''):
+    def __init__(self, parameter_name='New Array'):
         '''
         Parameters
         ----------

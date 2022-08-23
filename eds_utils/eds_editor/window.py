@@ -2,12 +2,12 @@ from os.path import basename
 
 from gi.repository import Gtk
 
+from .errors_dialog import ErrorsDialog
 from .general_info_page import GeneralInfoPage
 from .object_dictionary_page import ObjectDictionaryPage
 from .device_commissioning_page import DeviceCommissioningPage
 from ..core.file_io.read_eds import read_eds
 from ..core.file_io.write_eds import write_eds
-from .errors_dialog import ErrorsDialog
 
 
 class AppWindow(Gtk.ApplicationWindow):
@@ -17,14 +17,12 @@ class AppWindow(Gtk.ApplicationWindow):
         self.eds = None
         self.file_path = None
 
-        self.errors_dialog = ErrorsDialog(self)
-
         self.notebook = Gtk.Notebook()
         self.notebook.hide()
         self.set_child(self.notebook)
 
         self.gi_page = GeneralInfoPage()
-        self.od_page = ObjectDictionaryPage()
+        self.od_page = ObjectDictionaryPage(self)
         self.dc_page = DeviceCommissioningPage()
 
         self.notebook.append_page(self.gi_page, Gtk.Label.new('General Info'))
@@ -83,8 +81,9 @@ class AppWindow(Gtk.ApplicationWindow):
         self.eds, errors = read_eds(file_path)
 
         if errors:
-            self.errors_dialog.errors = errors
-            self.errors_dialog.show()
+            errors_dialog = ErrorsDialog(self)
+            errors_dialog.errors = errors
+            errors_dialog.show()
 
         self.gi_page.load_eds(self.eds)
         self.od_page.load_eds(self.eds)

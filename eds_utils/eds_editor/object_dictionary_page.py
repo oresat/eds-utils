@@ -1,15 +1,25 @@
+from copy import deepcopy
+
 from gi.repository import Gtk
 
+from .errors_dialog import ErrorsDialog
+from .add_object_dialog import AddObjectDialog
+from .copy_object_dialog import CopyObjectDialog
 from ..core import DataType, ObjectType, AccessType, str2int
 from ..core.eds import EDS
+from ..core.objects import Variable, Array, Record
 
 
 class ObjectDictionaryPage(Gtk.ScrolledWindow):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, parent_window: Gtk.Window):
+        super().__init__()
 
-        self.eds = None
-        self.selected_obj = None
+        self._eds = None
+        self._parent_window = parent_window
+
+        self._selected_obj = None
+        self._selected_index = None
+        self._selected_subindex = None
 
         box = Gtk.Box(homogeneous=True)
         self.set_child(box)
@@ -22,49 +32,56 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         box_search = Gtk.Box(spacing=5)
         box_tree.append(box_search)
 
-        self.search_filter_text = ''
-        self.search_entry = Gtk.SearchEntry()
-        self.search_entry.set_hexpand(True)
-        self.search_entry.connect('changed', self.on_search_entry)
-        box_search.append(self.search_entry)
+        self._search_filter_text = ''
+        self._search_entry = Gtk.SearchEntry()
+        self._search_entry.set_hexpand(True)
+        self._search_entry.connect('changed', self.on_search_entry)
+        box_search.append(self._search_entry)
 
         button = Gtk.Button(label='Expand All')
         button.connect('clicked', self.on_expand_clicked)
         box_search.append(button)
 
-        scrolled_window = Gtk.ScrolledWindow()
-        scrolled_window.set_vexpand(True)
-        scrolled_window.set_hexpand(True)
-        scrolled_window.set_has_frame(True)
-        box_tree.append(scrolled_window)
+        self._od_scrolled_window = Gtk.ScrolledWindow()
+        self._od_scrolled_window.set_vexpand(True)
+        self._od_scrolled_window.set_hexpand(True)
+        self._od_scrolled_window.set_has_frame(True)
+        box_tree.append(self._od_scrolled_window)
 
-        self.indexes_store = Gtk.TreeStore(str, str)
-        self.tree_filter = self.indexes_store.filter_new()
-        self.tree_filter.set_visible_func(self.tree_filter_func)
-        self.od_treeview = Gtk.TreeView(model=self.tree_filter)
-        self.od_treeview.set_enable_tree_lines(True)
+        self._indexes_store = Gtk.TreeStore(str, str)
+        self._tree_filter = self._indexes_store.filter_new()
+        self._tree_filter.set_visible_func(self.tree_filter_func)
+        self._od_treeview = Gtk.TreeView()
+        self._od_scrolled_window.set_child(self._od_treeview)
+        self._od_treeview.set_model(self._tree_filter)
+        self._od_treeview.set_enable_tree_lines(True)
+
         for i, column_title in enumerate(['Object', 'Parameter Name']):
             renderer = Gtk.CellRendererText()
             column = Gtk.TreeViewColumn(column_title, renderer, text=i)
-            self.od_treeview.append_column(column)
-        select = self.od_treeview.get_selection()
+            self._od_treeview.append_column(column)
+
+        select = self._od_treeview.get_selection()
         select.connect('changed', self.on_tree_selection_changed)
-        scrolled_window.set_child(self.od_treeview)
 
         box_button = Gtk.Box()
         box_button.set_halign(Gtk.Align.CENTER)
         box_tree.append(box_button)
 
         button = Gtk.Button(label='Add')
+        button.connect('clicked', self.add_treeview_object_on_click)
         box_button.append(button)
 
         button = Gtk.Button(label='Remove')
+        button.connect('clicked', self.remove_treeview_object_on_click)
         box_button.append(button)
 
         button = Gtk.Button(label='Move')
+        button.connect('clicked', self.move_object_on_click)
         box_button.append(button)
 
         button = Gtk.Button(label='Copy')
+        button.connect('clicked', self.copy_object_on_click)
         box_button.append(button)
 
         frame = Gtk.Frame(label='Selected Object', margin_top=5, margin_bottom=5,
@@ -79,36 +96,36 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
 
         label = Gtk.Label.new('Parameter Name:')
         label.set_halign(Gtk.Align.START)
-        self.obj_parameter_name = Gtk.Entry()
-        self.obj_parameter_name.set_max_length(241)
+        self._obj_parameter_name = Gtk.Entry()
+        self._obj_parameter_name.set_max_length(241)
         grid.attach(label, column=0, row=0, width=1, height=1)
-        grid.attach(self.obj_parameter_name, column=1, row=0, width=3, height=1)
+        grid.attach(self._obj_parameter_name, column=1, row=0, width=3, height=1)
 
         label = Gtk.Label.new('Denotation:')
         label.set_halign(Gtk.Align.START)
-        self.obj_denotation = Gtk.Entry()
-        self.obj_denotation.set_max_length(241)
+        self._obj_denotation = Gtk.Entry()
+        self._obj_denotation.set_max_length(241)
         grid.attach(label, column=0, row=1, width=1, height=1)
-        grid.attach(self.obj_denotation, column=1, row=1, width=3, height=1)
+        grid.attach(self._obj_denotation, column=1, row=1, width=3, height=1)
 
         label = Gtk.Label.new('Object Type:')
         label.set_halign(Gtk.Align.START)
-        self.obj_type = Gtk.DropDown()
-        self.obj_type.set_sensitive(False)
+        self._obj_type = Gtk.DropDown()
+        self._obj_type.set_sensitive(False)
         obj_type_list = Gtk.StringList.new(strings=[i.name for i in ObjectType])
-        self.obj_type.set_model(obj_type_list)
-        self.obj_type.set_selected(0)
+        self._obj_type.set_model(obj_type_list)
+        self._obj_type.set_selected(0)
         grid.attach(label, column=0, row=2, width=1, height=1)
-        grid.attach(self.obj_type, column=1, row=2, width=1, height=1)
+        grid.attach(self._obj_type, column=1, row=2, width=1, height=1)
 
         label = Gtk.Label.new('Access Type:')
         label.set_halign(Gtk.Align.START)
-        self.obj_access_type = Gtk.DropDown()
+        self._obj_access_type = Gtk.DropDown()
         access_type_list = Gtk.StringList.new(strings=[i.name for i in AccessType])
-        self.obj_access_type.set_model(access_type_list)
-        self.obj_access_type.set_selected(0)
+        self._obj_access_type.set_model(access_type_list)
+        self._obj_access_type.set_selected(0)
         grid.attach(label, column=2, row=2, width=1, height=1)
-        grid.attach(self.obj_access_type, column=3, row=2, width=1, height=1)
+        grid.attach(self._obj_access_type, column=3, row=2, width=1, height=1)
 
         label = Gtk.Label.new('Comment:')
         label.set_halign(Gtk.Align.START)
@@ -116,45 +133,45 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         scrolled_window.set_vexpand(True)
         scrolled_window.set_hexpand(True)
         scrolled_window.set_has_frame(True)
-        self.obj_comment = Gtk.TextView()
-        scrolled_window.set_child(self.obj_comment)
+        self._obj_comment = Gtk.TextView()
+        scrolled_window.set_child(self._obj_comment)
         grid.attach(label, column=0, row=3, width=1, height=5)
         grid.attach(scrolled_window, column=1, row=3, width=3, height=5)
 
         label = Gtk.Label.new('Data Type:')
         label.set_halign(Gtk.Align.START)
-        self.obj_data_type = Gtk.DropDown()
+        self._obj_data_type = Gtk.DropDown()
         data_type_list = Gtk.StringList.new(strings=[i.name for i in DataType])
-        self.obj_data_type.set_model(data_type_list)
-        self.obj_data_type.set_selected(0)
+        self._obj_data_type.set_model(data_type_list)
+        self._obj_data_type.set_selected(0)
         grid.attach(label, column=0, row=8, width=1, height=1)
-        grid.attach(self.obj_data_type, column=1, row=8, width=1, height=1)
+        grid.attach(self._obj_data_type, column=1, row=8, width=1, height=1)
 
         label = Gtk.Label.new('PDO Mapping:')
         label.set_halign(Gtk.Align.START)
-        self.obj_pdo_mapping = Gtk.Switch()
-        self.obj_pdo_mapping.set_halign(Gtk.Align.START)
-        self.obj_pdo_mapping.set_valign(Gtk.Align.CENTER)
+        self._obj_pdo_mapping = Gtk.Switch()
+        self._obj_pdo_mapping.set_halign(Gtk.Align.START)
+        self._obj_pdo_mapping.set_valign(Gtk.Align.CENTER)
         grid.attach(label, column=2, row=8, width=1, height=1)
-        grid.attach(self.obj_pdo_mapping, column=3, row=8, width=1, height=1)
+        grid.attach(self._obj_pdo_mapping, column=3, row=8, width=1, height=1)
 
         label = Gtk.Label.new('Default Value:')
         label.set_halign(Gtk.Align.START)
-        self.obj_default_value = Gtk.Entry()
+        self._obj_default_value = Gtk.Entry()
         grid.attach(label, column=0, row=9, width=1, height=1)
-        grid.attach(self.obj_default_value, column=1, row=9, width=3, height=1)
+        grid.attach(self._obj_default_value, column=1, row=9, width=3, height=1)
 
         label = Gtk.Label.new('Low Limit:')
         label.set_halign(Gtk.Align.START)
-        self.obj_low_limit = Gtk.Entry()
+        self._obj_low_limit = Gtk.Entry()
         grid.attach(label, column=0, row=10, width=1, height=1)
-        grid.attach(self.obj_low_limit, column=1, row=10, width=1, height=1)
+        grid.attach(self._obj_low_limit, column=1, row=10, width=1, height=1)
 
         label = Gtk.Label.new('High Limit:')
         label.set_halign(Gtk.Align.START)
-        self.obj_high_limit = Gtk.Entry()
+        self._obj_high_limit = Gtk.Entry()
         grid.attach(label, column=2, row=10, width=1, height=1)
-        grid.attach(self.obj_high_limit, column=3, row=10, width=1, height=1)
+        grid.attach(self._obj_high_limit, column=3, row=10, width=1, height=1)
 
         button = Gtk.Button(label='Update')
         button.set_halign(Gtk.Align.END)
@@ -170,28 +187,29 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
 
     def on_update_button_clicked(self, button):
 
-        if self.selected_obj is None:
+        if self._selected_obj is None:
             return
 
-        self.selected_obj.pParameter_name = self.obj_parameter_name.get_text()
-        buf = self.obj_comment.get_buffer()
-        self.selected_obj.comments = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
-        data_type = self.obj_data_type.get_selected()
-        self.selected_obj.data_type = list(DataType)[data_type]
-        access_type = self.obj_access_type.get_selected()
-        self.selected_obj.access_type = list(AccessType)[access_type]
-        self.selected_obj.default_value = self.obj_default_value.get_text()
-        self.selected_obj.pdo_mapping = self.obj_pdo_mapping.get_state()
+        self._selected_obj.parameter_name = self._obj_parameter_name.get_text()
+        buf = self._obj_comment.get_buffer()
+        self._selected_obj.comments = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
+        data_type = self._obj_data_type.get_selected()
+        self._selected_obj.data_type = list(DataType)[data_type]
+        access_type = self._obj_access_type.get_selected()
+        self._selected_obj.access_type = list(AccessType)[access_type]
+        self._selected_obj.default_value = self._obj_default_value.get_text()
+        self._selected_obj.pdo_mapping = self._obj_pdo_mapping.get_state()
 
     def on_cancel_button_clicked(self, button):
 
-        self._loaf_selection()
+        self._load_selection()
 
     def on_search_entry(self, entry) -> None:
         '''Callback on search filter entry for parameter names'''
 
-        self.search_filter_text = self.search_entry.get_text().lower()
-        self.tree_filter.refilter()
+        if self._tree_filter:
+            self._search_filter_text = self._search_entry.get_text().lower()
+            self._tree_filter.refilter()
 
     def tree_filter_func(self, model, iter, data) -> bool:
         '''Callback on refilter to change row visibility
@@ -202,14 +220,14 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             True to show row,False to not show
         '''
 
-        if self.search_filter_text:
+        if self._search_filter_text:
             # check parent row's children rows for match
             for i in range(model.iter_n_children(iter)):
                 subindex_iter = model.iter_nth_child(iter, i)
-                if self.search_filter_text in model[subindex_iter][1].lower():
+                if self._search_filter_text in model[subindex_iter][1].lower():
                     return True  # a subindex row contains search string
 
-            return self.search_filter_text in model[iter][1].lower()
+            return self._search_filter_text in model[iter][1].lower()
 
         return True  # no filter (show all)
 
@@ -217,38 +235,38 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         '''Callback on expand/collapse all button'''
 
         if button.get_label() == 'Expand All':
-            self.od_treeview.expand_all()
+            self._od_treeview.expand_all()
             button.set_label('Collapse All')
         else:
-            self.od_treeview.collapse_all()
+            self._od_treeview.collapse_all()
             button.set_label('Expand All')
 
-    def _loaf_selection(self):
+    def _load_selection(self):
 
-        if self.selected_obj is None:
+        if self._selected_obj is None:
             return
 
-        self.obj_parameter_name.set_text(self.selected_obj.parameter_name)
-        self.obj_denotation.set_text(self.selected_obj.denotation)
-        obj_type = self.selected_obj.object_type
-        self.obj_type.set_selected(list(ObjectType).index(obj_type))
-        self.obj_comment.get_buffer().set_text(self.selected_obj.comments)
-        if self.selected_obj.object_type == ObjectType.VAR:
-            data_type = self.selected_obj.data_type
-            self.obj_data_type.set_selected(list(DataType).index(data_type))
-            access_type = self.selected_obj.access_type
-            self.obj_access_type.set_selected(list(AccessType).index(access_type))
-            self.obj_default_value.set_text(self.selected_obj.default_value)
-            self.obj_pdo_mapping.set_state(self.selected_obj.pdo_mapping)
-            self.obj_low_limit.set_text(self.selected_obj.low_limit)
-            self.obj_high_limit.set_text(self.selected_obj.high_limit)
+        self._obj_parameter_name.set_text(self._selected_obj.parameter_name)
+        self._obj_denotation.set_text(self._selected_obj.denotation)
+        obj_type = self._selected_obj.object_type
+        self._obj_type.set_selected(list(ObjectType).index(obj_type))
+        self._obj_comment.get_buffer().set_text(self._selected_obj.comments)
+        if self._selected_obj.object_type == ObjectType.VAR:
+            data_type = self._selected_obj.data_type
+            self._obj_data_type.set_selected(list(DataType).index(data_type))
+            access_type = self._selected_obj.access_type
+            self._obj_access_type.set_selected(list(AccessType).index(access_type))
+            self._obj_default_value.set_text(self._selected_obj.default_value)
+            self._obj_pdo_mapping.set_state(self._selected_obj.pdo_mapping)
+            self._obj_low_limit.set_text(self._selected_obj.low_limit)
+            self._obj_high_limit.set_text(self._selected_obj.high_limit)
         else:
-            self.obj_data_type.set_selected(0)
-            self.obj_access_type.set_selected(0)
-            self.obj_default_value.set_text('')
-            self.obj_pdo_mapping.set_state(False)
-            self.obj_low_limit.set_text('')
-            self.obj_high_limit.set_text('')
+            self._obj_data_type.set_selected(0)
+            self._obj_access_type.set_selected(0)
+            self._obj_default_value.set_text('')
+            self._obj_pdo_mapping.set_state(False)
+            self._obj_low_limit.set_text('')
+            self._obj_high_limit.set_text('')
 
     def on_tree_selection_changed(self, selection):
         model, treeiter = selection.get_selected()
@@ -257,49 +275,256 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             return
 
         # reset this
-        self.obj_data_type.set_sensitive(True)
+        self._obj_data_type.set_sensitive(True)
 
         if model[treeiter].parent is None:  # index
             index_str = model[treeiter][0]
             index = str2int(index_str)
-            self.selected_obj = self.eds[index]
+            self._selected_obj = self._eds[index]
+            self._selected_index = index
+            self._selected_subindex = None
         else:  # subindex
             index_str = model[treeiter].parent[0]
             index = str2int(index_str)
             subindex_str = model[treeiter][0]
             subindex = str2int(subindex_str)
-            self.selected_obj = self.eds[index][subindex]
+            self._selected_obj = self._eds[index][subindex]
+            self._selected_index = index
+            self._selected_subindex = subindex
 
             if subindex == 0:
-                self.obj_data_type.set_sensitive(False)
+                self._obj_data_type.set_sensitive(False)
 
-        if self.selected_obj.object_type in [ObjectType.ARRAY, ObjectType.RECORD]:
-            self.obj_data_type.hide()
-            self.obj_access_type.hide()
-            self.obj_pdo_mapping.hide()
-            self.obj_default_value.hide()
-            self.obj_low_limit.hide()
-            self.obj_high_limit.hide()
+        if self._selected_obj.object_type in [ObjectType.ARRAY, ObjectType.RECORD]:
+            self._obj_data_type.hide()
+            self._obj_access_type.hide()
+            self._obj_pdo_mapping.hide()
+            self._obj_default_value.hide()
+            self._obj_low_limit.hide()
+            self._obj_high_limit.hide()
         else:
-            self.obj_data_type.show()
-            self.obj_access_type.show()
-            self.obj_pdo_mapping.show()
-            self.obj_default_value.show()
-            self.obj_low_limit.show()
-            self.obj_high_limit.show()
+            self._obj_data_type.show()
+            self._obj_access_type.show()
+            self._obj_pdo_mapping.show()
+            self._obj_default_value.show()
+            self._obj_low_limit.show()
+            self._obj_high_limit.show()
 
-        self._loaf_selection()
+        self._load_selection()
 
     def load_eds(self, eds: EDS):
-        self.eds = eds
+        self._eds = eds
 
-        for index in self.eds.indexes:
+        # fill tree view with object dictionary data
+        for index in self._eds.indexes:
             index_str = f'0x{index:X}'
-            index_section = self.eds[index]
-            self.indexes_store.append(None, [index_str, index_section.parameter_name])
+            index_section = self._eds[index]
+            self._indexes_store.append(None, [index_str, index_section.parameter_name])
             if index_section.object_type != ObjectType.VAR:
-                for subindex in self.eds[index].subindexes:
+                for subindex in self._eds[index].subindexes:
                     subindex_str = f'0x{subindex:X}'
-                    subindex_section = self.eds[index][subindex]
-                    self.indexes_store.append(self.indexes_store[-1].iter,
-                                              [subindex_str, subindex_section.parameter_name])
+                    subindex_section = self._eds[index][subindex]
+                    self._indexes_store.append(self._indexes_store[-1].iter,
+                                               [subindex_str, subindex_section.parameter_name])
+
+    def add_treeview_obj(self, index: int, subindex: int, name: str):
+        index_str = f'0x{index:X}'
+
+        index_found = False
+        for i in self._indexes_store:
+            if index == str2int(i[0]):
+                if subindex < 0:
+                    raise ValueError(f'index {index_str} already exists')
+
+                for j in i.iterchildren():
+                    subindex_str = f'0x{subindex:X}'
+                    if subindex < 0:
+                        msg = f'index {index_str} subindex {subindex_str} already exists'
+                        raise ValueError(msg)
+
+                    if subindex < str2int(j[0]):
+                        # insert new object before subindex
+                        new_iter = self._indexes_store.insert_before(None, j.iter)
+                        self._indexes_store.set_value(new_iter, 0, subindex_str)
+                        self._indexes_store.set_value(new_iter, 1, name)
+                        index_found = True
+                        break
+
+                if not index_found:
+                    # new subindex exceed all existing ones
+                    subindex_str = f'0x{subindex:X}'
+                    self._indexes_store.append(i.iter, [subindex_str, name])
+                    index_found = True
+                    break
+                else:
+                    # new index was found in subindex loop, break index loop
+                    break
+            elif index < str2int(i[0]):
+                # insert new object before index
+                new_iter = self._indexes_store.insert_before(None, i.iter)
+                self._indexes_store.set_value(new_iter, 0, index_str)
+                self._indexes_store.set_value(new_iter, 1, name)
+                index_found = True
+                break
+
+        if not index_found:
+            # new index exceed all existing ones
+            self._indexes_store.append(None, [index_str, name])
+
+    def remove_treeview_obj(self, index: int, subindex: int):
+
+        for i in self._indexes_store:
+            if index == str2int(i[0]):
+                if self._selected_subindex is None:  # remove index
+                    self._indexes_store.remove(i.iter)
+                    break
+                else:  # remove subindex
+                    for j in i.iterchildren():
+                        if subindex == str2int(j[0]):
+                            self._indexes_store.remove(j.iter)
+                            break
+                    break  # stop index loop
+
+    def update_obj(self, index: int, subindex: int, name: str):
+
+        for i in self._indexes_store:
+            if index == str2int(i[0]):
+                if self._selected_subindex is None:  # remove index
+                    self._indexes_store.set_value(i.iter, 1, name)
+                    break
+                else:  # remove subindex
+                    for j in i.iterchildren():
+                        if subindex == str2int(j[0]):
+                            self._indexes_store.set_value(j.iter, 1, name)
+                            break
+                    break  # stop index loop
+
+    def add_treeview_object_on_click(self, button):
+
+        dialog = AddObjectDialog(self._parent_window, self._eds)
+        dialog.connect('response', self.add_treeview_object_response)
+        dialog.show()
+
+    def add_treeview_object_response(self, dialog: Gtk.Dialog, response: int) -> None:
+
+        new_index, new_subindex, new_obj_type = dialog.get_response()
+
+        # add new object to eds
+        if new_subindex is None:
+            if new_obj_type == ObjectType.VAR:
+                obj = Variable()
+            elif new_obj_type == ObjectType.ARRAY:
+                obj = Array()
+            else:
+                obj = Record()
+            self._eds[new_index] = obj
+        else:
+            obj = Variable()
+            self._eds[new_index][new_subindex] = obj
+
+        # add new object to treeview
+        self.add_treeview_obj(new_index, new_subindex, obj.parameter_name)
+
+    def check_selected(self):
+
+        errors = []
+
+        if self._selected_index in self._eds.MANDATORY_OBJECTS:
+            errors.append(f'Cannot move/remove a mandotory object of 0x{self._selected_index:X}')
+
+        if self._selected_subindex == 0:
+            errors.append('Cannot move/remove subindex 0 of Arrays or Records')
+
+        if errors:
+            errors_dialog = ErrorsDialog(self._parent_window)
+            errors_dialog.errors = errors
+            errors_dialog.show()
+
+        return errors
+
+    def remove_treeview_object_on_click(self, button):
+
+        if self.check_selected():
+            return  # invalid object to remove
+
+        if self._selected_index not in self._eds.indexes:
+            return  # nothing to delete
+
+        # remove from od
+        if self._selected_subindex is None:
+            del self._eds[self._selected_index]
+        elif self._selected_subindex in self._eds[self._selected_index].subindexes:
+            del self._eds[self._selected_index][self._selected_subindex]
+
+        # remove from treeview
+        self.remove_treeview_obj(self._selected_index, self._selected_subindex)
+
+    def copy_object_on_click(self, button):
+
+        dialog = CopyObjectDialog(self._parent_window, self._eds, self._selected_index,
+                                  self._selected_subindex)
+        dialog.connect('response', self.copy_treeview_object_response)
+        dialog.show()
+
+    def copy_treeview_object_response(self, dialog: Gtk.Dialog, response: int) -> None:
+
+        new_index, new_subindex = dialog.get_response()
+
+        # add new object to eds
+        if new_subindex is None and self._selected_subindex is None:
+            # copy a index to a new index
+            self._eds[new_index] = deepcopy(self._eds[self._selected_index])
+        elif new_subindex is not None and self._selected_subindex is None:
+            # copy a index to a new subindex
+            self._eds[new_index][new_subindex] = deepcopy(self._eds[self._selected_index])
+        elif new_subindex is None and self._selected_subindex is not None:
+            # copy a subindex to a new index
+            self._eds[new_index] = \
+                deepcopy(self._eds[self._selected_index][self._selected_subindex])
+        else:
+            # copy a subindex to a new subindex
+            temp = deepcopy(self._eds[self._selected_index][self._selected_subindex])
+            self._eds[new_index][new_subindex] = temp
+
+        # add new object to treeview
+        name = self._selected_obj.parameter_name
+        self.add_treeview_obj(new_index, new_subindex, name)
+
+    def move_object_on_click(self, button):
+
+        if self.check_selected():
+            return  # invalid object to move
+
+        dialog = CopyObjectDialog(self._parent_window, self._eds, self._selected_index,
+                                  self._selected_subindex, move=True)
+        dialog.connect('response', self.move_treeview_object_response)
+        dialog.show()
+
+    def move_treeview_object_response(self, dialog: Gtk.Dialog, response: int) -> None:
+
+        new_index, new_subindex = dialog.get_response()
+
+        # move object in eds
+        if new_subindex is None and self._selected_subindex is None:
+            # move a index to a new index
+            self._eds[new_index] = deepcopy(self._eds[self._selected_index])
+            del self._eds[self._selected_index]
+        elif new_subindex is not None and self._selected_subindex is None:
+            # move a index to a new subindex
+            self._eds[new_index][new_subindex] = deepcopy(self._eds[self._selected_index])
+            del self._eds[self._selected_index]
+        elif new_subindex is None and self._selected_subindex is not None:
+            # move a subindex to a new index
+            self._eds[new_index] = \
+                deepcopy(self._eds[self._selected_index][self._selected_subindex])
+            del self._eds[self._selected_index][self._selected_subindex]
+        else:
+            # move a subindex to a new subindex
+            temp = deepcopy(self._eds[self._selected_index][self._selected_subindex])
+            self._eds[new_index][new_subindex] = temp
+            del self._eds[self._selected_index][self._selected_subindex]
+
+        # move object in treeview
+        name = self._selected_obj.parameter_name
+        self.add_treeview_obj(new_index, new_subindex, name)
+        self.remove_treeview_obj(self._selected_index, self._selected_subindex)
