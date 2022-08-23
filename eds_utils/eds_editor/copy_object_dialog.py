@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from gi.repository import Gtk
 
 from ..core import ObjectType, str2int
@@ -20,6 +18,9 @@ class CopyObjectDialog(Gtk.Dialog):
         self.index = index
         self.subindex = subindex
         self.move = move
+
+        self._new_index = None
+        self._new_subindex = None
 
         box = self.get_content_area()
 
@@ -76,8 +77,8 @@ class CopyObjectDialog(Gtk.Dialog):
     def on_copy_button_clicked(self, button):
 
         errors = []
-        index = -1
-        subindex = -1
+        index = None
+        subindex = None
 
         subindex_raw = self.subindex_entry.get_text()
 
@@ -86,7 +87,7 @@ class CopyObjectDialog(Gtk.Dialog):
         except Exception:
             errors.append('ERROR: invalid value in index field')
 
-        if index != -1:
+        if index:
             if index < 0x1000 or index > 0xFFFF:
                 errors.append('ERROR: index must be between 0x1000 and 0xFFFF')
             if index in self.eds.indexes and subindex_raw in ['', 'NA']:
@@ -105,21 +106,15 @@ class CopyObjectDialog(Gtk.Dialog):
             except Exception:
                 errors.append('ERROR: invalid value in subindex field')
 
-            if subindex != -1 and (subindex < 0 or subindex > 0xFF):
+            if subindex is not None and (subindex < 0 or subindex > 0xFF):
                 errors.append('ERROR: subindex must be between 0x0 and 0xFF')
 
         if errors:  # one or more errors with index/subindex values
             self.errors_label.set_text('\n'.join(errors))
             return
 
-        if subindex != -1:
-            self.eds[index][subindex] = deepcopy(self.eds[self.index][self.subindex])
-            if self.move:
-                del self.eds[self.index][self.subindex]
-        else:
-            self.eds[index] = deepcopy(self.eds[self.index])
-            if self.move:
-                del self.eds[self.index]
+        self._new_index = index
+        self._new_subindex = subindex
 
         self.response(1)
         self.destroy()
@@ -127,3 +122,7 @@ class CopyObjectDialog(Gtk.Dialog):
     def on_cancel_button_clicked(self, button):
 
         self.destroy()
+
+    def get_response(self) -> (int, int):
+
+        return self._new_index, self._new_subindex

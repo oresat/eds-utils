@@ -1,7 +1,6 @@
 from gi.repository import Gtk
 
-from ..core import DataType, ObjectType, str2int
-from ..core.objects import Variable, Array, Record
+from ..core import ObjectType, str2int
 
 
 class AddObjectDialog(Gtk.Dialog):
@@ -10,7 +9,10 @@ class AddObjectDialog(Gtk.Dialog):
 
         super().__init__(title='Add new object', transient_for=parent)
 
-        self.eds = eds
+        self._eds = eds
+        self._new_index = None
+        self._new_subindex = None
+        self._new_object_type = None
 
         box = self.get_content_area()
 
@@ -20,28 +22,28 @@ class AddObjectDialog(Gtk.Dialog):
 
         label = Gtk.Label(label='Object Type:')
         label.set_halign(Gtk.Align.START)
-        self.obj_type = Gtk.DropDown()
+        self._obj_type = Gtk.DropDown()
         obj_type_list = Gtk.StringList.new(strings=[i.name for i in ObjectType])
-        self.obj_type.set_model(obj_type_list)
-        self.obj_type.set_selected(0)
+        self._obj_type.set_model(obj_type_list)
+        self._obj_type.set_selected(0)
         grid.attach(label, column=0, row=0, width=1, height=1)
-        grid.attach(self.obj_type, column=1, row=0, width=1, height=1)
+        grid.attach(self._obj_type, column=1, row=0, width=1, height=1)
 
         label = Gtk.Label(label='Index:')
         label.set_halign(Gtk.Align.START)
-        self.index_entry = Gtk.Entry()
-        self.index_entry.set_text('0x1000')
+        self._index_entry = Gtk.Entry()
+        self._index_entry.set_text('0x1000')
         grid.attach(label, column=0, row=1, width=1, height=1)
-        grid.attach(self.index_entry, column=1, row=1, width=1, height=1)
+        grid.attach(self._index_entry, column=1, row=1, width=1, height=1)
 
         label = Gtk.Label(label='Subindex (optional):')
         label.set_halign(Gtk.Align.START)
-        self.subindex_entry = Gtk.Entry()
+        self._subindex_entry = Gtk.Entry()
         grid.attach(label, column=2, row=1, width=1, height=1)
-        grid.attach(self.subindex_entry, column=3, row=1, width=1, height=1)
+        grid.attach(self._subindex_entry, column=3, row=1, width=1, height=1)
 
-        self.errors_label = Gtk.Label(label=' ')
-        grid.attach(self.errors_label, column=0, row=2, width=4, height=1)
+        self._errors_label = Gtk.Label(label=' ')
+        grid.attach(self._errors_label, column=0, row=2, width=4, height=1)
 
         button = Gtk.Button(label='Add')
         button.set_halign(Gtk.Align.END)
@@ -56,74 +58,45 @@ class AddObjectDialog(Gtk.Dialog):
         grid.attach(button, column=2, row=3, width=1, height=1)
 
         # do this last
-        self.obj_type.connect('notify', self.on_object_type_changed)
-
-    @property
-    def new_object(self):
-
-        object_type = list(ObjectType)[self.obj_type.get_selected()]
-
-        if object_type == ObjectType.VAR:
-            obj = Variable()
-            data_type = list(DataType)[self.obj_data_type.get_selected()]
-            obj.data_type = data_type
-            obj.parameter_name = 'New variable'
-        elif object_type == ObjectType.ARRAY:
-            obj = Array()
-            obj.parameter_name = 'New array'
-        elif object_type == ObjectType.RECORD:
-            obj = Record()
-            obj.parameter_name = 'New record'
-
-        return obj
-
-    @property
-    def index(self) -> int:
-
-        return self.index_adj.get_value()
-
-    @property
-    def subindex(self) -> int:
-
-        return self.subindex_adj.get_value()
+        self._obj_type.connect('notify', self.on_object_type_changed)
 
     def on_object_type_changed(self, drop_down, flags):
 
-        object_type = list(ObjectType)[self.obj_type.get_selected()]
+        object_type = list(ObjectType)[self._obj_type.get_selected()]
         if object_type == ObjectType.VAR:
-            self.subindex_entry.set_sensitive(True)
-            self.subindex_entry.set_text('')
+            self._subindex_entry.set_sensitive(True)
+            self._subindex_entry.set_text('')
         else:
-            self.subindex_entry.set_sensitive(False)
-            self.subindex_entry.set_text('NA')
+            self._subindex_entry.set_sensitive(False)
+            self._subindex_entry.set_text('NA')
 
     def on_add_button_clicked(self, button):
 
         errors = []
-        index = -1
-        subindex = -1
-        object_type = list(ObjectType)[self.obj_type.get_selected()]
+        index = None
+        subindex = None
+        object_type = list(ObjectType)[self._obj_type.get_selected()]
 
-        subindex_raw = self.subindex_entry.get_text()
+        subindex_raw = self._subindex_entry.get_text()
 
         try:
-            index = str2int(self.index_entry.get_text())
+            index = str2int(self._index_entry.get_text())
         except Exception:
             errors.append('ERROR: invalid value in index field')
 
-        if index != -1:
+        if index:
             if index < 0x1000 or index > 0xFFFF:
                 errors.append('ERROR: index must be between 0x1000 and 0xFFFF')
-            if index in self.eds.indexes and subindex_raw in ['', 'NA']:
+            if index in self._eds.indexes and subindex_raw in ['', 'NA']:
                 errors.append('ERROR: index already exist')
 
         if subindex_raw not in ['', 'NA']:
             if object_type == ObjectType.VAR and index != -1:
-                if index not in self.eds.indexes:
+                if index not in self._eds.indexes:
                     errors.append('ERROR: index does not exist for new subindex')
-                elif self.eds[index].object_type == ObjectType.VAR:
+                elif self._eds[index].object_type == ObjectType.VAR:
                     errors.append('ERROR: cannot add an subindex to VAR')
-                elif subindex in self.eds[index].subindexes:
+                elif subindex in self._eds[index].subindexes:
                     errors.append('ERROR: subindex already exist')
 
             try:
@@ -131,27 +104,16 @@ class AddObjectDialog(Gtk.Dialog):
             except Exception:
                 errors.append('ERROR: invalid value in subindex field')
 
-            if subindex != -1 and (subindex < 0 or subindex > 0xFF):
+            if subindex is not None and (subindex < 0 or subindex > 0xFF):
                 errors.append('ERROR: subindex must be between 0x0 and 0xFF')
 
         if errors:  # one or more errors with index/subindex values
-            self.errors_label.set_text('\n'.join(errors))
+            self._errors_label.set_text('\n'.join(errors))
             return
 
-        if object_type == ObjectType.VAR:
-            obj = Variable()
-            obj.parameter_name = 'New variable'
-        elif object_type == ObjectType.ARRAY:
-            obj = Array()
-            obj.parameter_name = 'New array'
-        elif object_type == ObjectType.RECORD:
-            obj = Record()
-            obj.parameter_name = 'New record'
-
-        if subindex != -1:
-            self.eds[index][subindex] = obj
-        else:
-            self.eds[index] = obj
+        self._new_index = index
+        self._new_subindex = subindex
+        self._new_object_type = object_type
 
         self.response(1)
         self.destroy()
@@ -159,9 +121,17 @@ class AddObjectDialog(Gtk.Dialog):
     def on_cancel_button_clicked(self, button):
 
         # reset to defaults
-        self.obj_type.set_selected(0)
-        self.index_entry.set_text('0x1000')
-        self.subindex_entry.set_text('')
-        self.subindex_entry.set_sensitive(True)
+        self._obj_type.set_selected(0)
+        self._index_entry.set_text('0x1000')
+        self._subindex_entry.set_text('')
+        self._subindex_entry.set_sensitive(True)
+
+        self._new_index = None
+        self._new_subindex = None
+        self._new_object_type = None
 
         self.destroy()
+
+    def get_response(self) -> (int, int, ObjectType):
+
+        return self._new_index, self._new_subindex, self._new_object_type
