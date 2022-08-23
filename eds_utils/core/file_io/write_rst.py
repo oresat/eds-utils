@@ -15,7 +15,7 @@ def write_rst(eds: EDS, file_path='', dcf=False) -> None:
     eds: EDS
         eds data structure to save as file
     file_path: str
-        File path of eds/dcf to save and must end with ".md". If empty the value from the eds data
+        File path of eds/dcf to save and must end with ".rst". If empty the value from the eds data
         structure.
     dcf: bool
         Add dcf info to markdown file.
@@ -24,7 +24,7 @@ def write_rst(eds: EDS, file_path='', dcf=False) -> None:
     lines = []
 
     if not file_path:  # use value from file info in eds
-        file_path = splitext(eds.file_info.file_name)[0] + '.md'
+        file_path = splitext(eds.file_info.file_name)[0] + '.rst'
 
     title = eds.file_info.file_name
     lines.append('#' * len(title))

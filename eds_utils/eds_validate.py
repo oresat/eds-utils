@@ -3,7 +3,7 @@ import argparse
 
 from .core.file_io.read_eds import read_eds
 
-EDS_VALIDATE_DESCRIPTION = 'Validate EDS/DCF files'
+EDS_VALIDATE_DESCRIPTION = 'Validate a EDS/DCF file'
 
 
 def eds_validate(sys_args=None):
@@ -12,7 +12,7 @@ def eds_validate(sys_args=None):
 
     name = 'eds-validate'
     parser = argparse.ArgumentParser(description=EDS_VALIDATE_DESCRIPTION, prog=name)
-    parser.add_argument('filepath', metavar='FILEPATH', help='filepath to EDS/DCF file')
+    parser.add_argument('filepath', metavar='FILEPATH', help='file path to EDS/DCF file')
     parser.add_argument('-s', '--silence', action='store_true', help='silence prints to stderr')
     args = parser.parse_args(sys_args)
 

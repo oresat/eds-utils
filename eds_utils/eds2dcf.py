@@ -5,16 +5,15 @@ from .core import str2int
 from .core.file_io.read_eds import read_eds
 from .core.file_io.write_eds import write_eds
 
-EDS2DCF_DESCRIPTION = 'EDS to DCF CLI tool'
+EDS2DCF_DESCRIPTION = 'Convert a EDS file to a DCF file'
 
 
 def eds2dcf(sys_args=None):
     if sys_args is None:
         sys_args = sys.argv[1:]
 
-    name = 'eds2dcf'
-    parser = argparse.ArgumentParser(description=EDS2DCF_DESCRIPTION, prog=name)
-    parser.add_argument('filepath', metavar='FILEPATH', help='filepath to EDS file')
+    parser = argparse.ArgumentParser(description=EDS2DCF_DESCRIPTION, prog='eds2dcf')
+    parser.add_argument('filepath', metavar='FILEPATH', help='file path to EDS file')
     parser.add_argument('node_id', metavar='NODE_ID', help='set the node ID')
     parser.add_argument('node_name', metavar='NODE_NAME', help='set the node name')
     parser.add_argument('-b', '--baud-rate', type=int, default=1000,

@@ -3,7 +3,7 @@ import argparse
 
 from .app import App
 
-EDS_EDITOR_DESCRIPTION = 'GUI to edit EDS/DCF files.'
+EDS_EDITOR_DESCRIPTION = 'A GUI to edit EDS/DCF files'
 
 
 def eds_editor(sys_args=None):
@@ -13,7 +13,7 @@ def eds_editor(sys_args=None):
     name = 'eds-editor'
     parser = argparse.ArgumentParser(description=EDS_EDITOR_DESCRIPTION, prog=name)
     parser.add_argument('filepath', nargs='*', default='', metavar='FILEPATH',
-                        help='filepath to EDS file')
+                        help='file path(s) to EDS file(s)')
     args = parser.parse_args(sys_args)
 
     app = App()
