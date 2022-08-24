@@ -5,7 +5,7 @@ from gi.repository import Gtk
 from .errors_dialog import ErrorsDialog
 from .add_object_dialog import AddObjectDialog
 from .copy_object_dialog import CopyObjectDialog
-from ..core import DataType, ObjectType, AccessType, str2int
+from ..core import DataType, ObjectType, AccessType, StorageLocation, str2int
 from ..core.eds import EDS
 from ..core.objects import Variable, Array, Record
 
@@ -173,17 +173,26 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         grid.attach(label, column=2, row=10, width=1, height=1)
         grid.attach(self._obj_high_limit, column=3, row=10, width=1, height=1)
 
+        label = Gtk.Label.new('Storage Location (CANopenNode):')
+        label.set_halign(Gtk.Align.START)
+        self._obj_storage_loc = Gtk.DropDown()
+        storage_loc_list = Gtk.StringList.new(strings=[i.name for i in StorageLocation])
+        self._obj_storage_loc.set_model(storage_loc_list)
+        self._obj_storage_loc.set_selected(0)
+        grid.attach(label, column=0, row=11, width=1, height=1)
+        grid.attach(self._obj_storage_loc, column=1, row=11, width=1, height=1)
+
         button = Gtk.Button(label='Update')
         button.set_halign(Gtk.Align.END)
         button.set_valign(Gtk.Align.END)
         button.connect('clicked', self.on_update_button_clicked)
-        grid.attach(button, column=0, row=11, width=2, height=2)
+        grid.attach(button, column=0, row=12, width=2, height=2)
 
         button = Gtk.Button(label='Cancel')
         button.set_halign(Gtk.Align.START)
         button.set_valign(Gtk.Align.END)
         button.connect('clicked', self.on_cancel_button_clicked)
-        grid.attach(button, column=2, row=11, width=2, height=2)
+        grid.attach(button, column=2, row=12, width=2, height=2)
 
     def on_update_button_clicked(self, button):
 
@@ -199,6 +208,8 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         self._selected_obj.access_type = list(AccessType)[access_type]
         self._selected_obj.default_value = self._obj_default_value.get_text()
         self._selected_obj.pdo_mapping = self._obj_pdo_mapping.get_state()
+        storage_loc = self._obj_pdo_mapping.get_selected()
+        self._selected_obj.storage_location = list(StorageLocation)[storage_loc]
 
     def on_cancel_button_clicked(self, button):
 
@@ -251,6 +262,8 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         obj_type = self._selected_obj.object_type
         self._obj_type.set_selected(list(ObjectType).index(obj_type))
         self._obj_comment.get_buffer().set_text(self._selected_obj.comments)
+        storage_loc = self._selected_obj.storage_loc
+        self._obj_storage_loc.set_selected(list(StorageLocation).index(storage_loc))
         if self._selected_obj.object_type == ObjectType.VAR:
             data_type = self._selected_obj.data_type
             self._obj_data_type.set_selected(list(DataType).index(data_type))
