@@ -112,5 +112,6 @@ class Array(Record):
 
     @data_type.setter
     def data_type(self, data_type: DataType) -> None:
-        for i in self._data[1:]:  # skip size subindex
-            i.data_type = data_type
+        for i in self._data:
+            if i != 0:
+                self._data[i].data_type = data_type

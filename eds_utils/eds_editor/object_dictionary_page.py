@@ -101,7 +101,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         grid.attach(label, column=0, row=0, width=1, height=1)
         grid.attach(self._obj_parameter_name, column=1, row=0, width=3, height=1)
 
-        label = Gtk.Label.new('Denotation:')
+        label = Gtk.Label.new('Denotation (DCF only):')
         label.set_halign(Gtk.Align.START)
         self._obj_denotation = Gtk.Entry()
         self._obj_denotation.set_max_length(241)
@@ -260,13 +260,9 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             self._obj_pdo_mapping.set_state(self._selected_obj.pdo_mapping)
             self._obj_low_limit.set_text(self._selected_obj.low_limit)
             self._obj_high_limit.set_text(self._selected_obj.high_limit)
-        else:
-            self._obj_data_type.set_selected(0)
-            self._obj_access_type.set_selected(0)
-            self._obj_default_value.set_text('')
-            self._obj_pdo_mapping.set_state(False)
-            self._obj_low_limit.set_text('')
-            self._obj_high_limit.set_text('')
+        elif self._selected_obj.object_type == ObjectType.ARRAY:
+            data_type = self._selected_obj[1].data_type
+            self._obj_data_type.set_selected(list(DataType).index(data_type))
 
     def on_tree_selection_changed(self, selection):
         model, treeiter = selection.get_selected()
@@ -292,10 +288,17 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             self._selected_index = index
             self._selected_subindex = subindex
 
-            if subindex == 0:
+            if subindex == 0 or self._eds[index].object_type == ObjectType.ARRAY:
                 self._obj_data_type.set_sensitive(False)
 
-        if self._selected_obj.object_type in [ObjectType.ARRAY, ObjectType.RECORD]:
+        if self._selected_obj.object_type == ObjectType.ARRAY:
+            self._obj_data_type.show()
+            self._obj_access_type.hide()
+            self._obj_pdo_mapping.hide()
+            self._obj_default_value.hide()
+            self._obj_low_limit.hide()
+            self._obj_high_limit.hide()
+        elif self._selected_obj.object_type == ObjectType.RECORD:
             self._obj_data_type.hide()
             self._obj_access_type.hide()
             self._obj_pdo_mapping.hide()
