@@ -36,6 +36,7 @@ class Record:
         self.comments = ''
         self._data = {}
         self.object_type = ObjectType.RECORD
+        self.storage_location = StorageLocation.RAM  # for CANopenNode support
 
         var = Variable()
         var.parameter_name = 'Highest sub-index supported'

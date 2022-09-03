@@ -262,7 +262,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         obj_type = self._selected_obj.object_type
         self._obj_type.set_selected(list(ObjectType).index(obj_type))
         self._obj_comment.get_buffer().set_text(self._selected_obj.comments)
-        storage_loc = self._selected_obj.storage_loc
+        storage_loc = self._selected_obj.storage_location
         self._obj_storage_loc.set_selected(list(StorageLocation).index(storage_loc))
         if self._selected_obj.object_type == ObjectType.VAR:
             data_type = self._selected_obj.data_type
