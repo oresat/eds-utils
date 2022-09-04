@@ -1,6 +1,6 @@
 '''Everything to write an eds/dcf as CANopenNode OD.[c/h] files'''
 
-from .. import ObjectType, DataType, StorageLocation
+from .. import ObjectType, DataType, StorageLocation, AccessType
 from ..eds import EDS
 
 INDENT4 = ' ' * 4
@@ -74,7 +74,16 @@ def camel_case(string: str) -> str:
 
     name = ''
     for i in s:
-        if i == i.upper():  # acronym
+
+        number = True
+        try:
+            int(i)
+        except ValueError:
+            number = False
+
+        if number:
+            name += f'_{i}_'  # add '_' arounds numbers
+        elif len(i) > 1 and i == i.upper():  # acronym
             name += i + '_'  # add '_' after acronym
         else:
             name += i.capitalize()
@@ -86,6 +95,8 @@ def camel_case(string: str) -> str:
     # remove any trailing '_'
     if name[-1] == '_':
         name = name[:-1]
+
+    name = name.replace('__', '_')
 
     return name
 
@@ -168,6 +179,30 @@ def object_type_length(obj) -> int:
     return length
 
 
+def _var_attr_flags(var):
+    attr_str = ''
+
+    if var.access_type in [AccessType.RO, AccessType.CONST]:
+        attr_str += 'ODA_SDO_R'
+        if var.pdo_mapping:
+            attr_str += '| ODA_TPDO'
+    elif var.access_type == AccessType.WO:
+        attr_str += 'ODA_SDO_W'
+        if var.pdo_mapping:
+            attr_str += '| ODA_RPDO'
+    else:
+        attr_str += 'ODA_SDO_RW'
+        if var.pdo_mapping:
+            attr_str += '| ODA_TRPDO'
+
+    if var.data_type in [DataType.VISIBLE_STRING, DataType.UNICODE_STRING]:
+        attr_str += '| ODA_STR'
+    elif DATA_TYPE_LENGTH[var.data_type] > 1:
+        attr_str += '| ODA_MB'
+
+    return attr_str
+
+
 def obj_lines(eds: EDS, index):
     lines = []
 
@@ -177,38 +212,35 @@ def obj_lines(eds: EDS, index):
     if obj.object_type == ObjectType.VAR:
         st_loc = obj.storage_location.name
         if obj.data_type == DataType.VISIBLE_STRING:
-            lines.append(f'{INDENT8}.dataOrig = &O_{st_loc}.{index:X}_{name}[0],')
-            lines.append(f'{INDENT8}.attribute = ODA_SDO_R | ODA_STR,')
+            lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
+            lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj)},')
             lines.append(f'{INDENT8}.dataLength = {object_type_length(obj)}')
         elif obj.data_type == DataType.OCTET_STRING:
-            lines.append(f'{INDENT8}.dataOrig = &O_{st_loc}.{index:X}_{name}[0],')
-            lines.append(f'{INDENT8}.attribute = ODA_SDO_R,')
+            lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
+            lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj)},')
             lines.append(f'{INDENT8}.dataLength = {object_type_length(obj) // 2}')
         else:
-            lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.{index:X}_{name},')
-            lines.append(f'{INDENT8}.attribute = ODA_SDO_RW | ODA_MB,')
+            lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name},')
+            lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj)},')
             lines.append(f'{INDENT8}.dataLength = {object_type_length(obj)}')
     elif obj.object_type == ObjectType.ARRAY:
         st_loc = obj.storage_location.name
-        lines.append(f'{INDENT8}.dataOrig0 = &OD_{st_loc}.{index:X}_{name}_sub0,')
-        lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.{index:X}_{name}[0],')
+        lines.append(f'{INDENT8}.dataOrig0 = &OD_{st_loc}.x{index:X}_{name}_sub0,')
+        lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
         lines.append(f'{INDENT8}.attribute0 = ODA_SDO_R,')
-        lines.append(f'{INDENT8}.attribute = ODA_SDO_RW | ODA_MB,')
+        lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj[1])},')
         length = object_type_length(obj)
         lines.append(f'{INDENT8}.dataElementLength = {length},')
         if length > 0 and length <= 8:
             lines.append(f'{INDENT8}.dataElementSizeof = sizeof(uint{8 * length}_t)')
     else:
         for i in obj.subindexes:
-            st_loc = obj[i].storage_location.name
+            st_loc = obj.storage_location.name
             name_sub = camel_case(obj[i].parameter_name)
             lines.append(INDENT8 + '{')
             lines.append(f'{INDENT16}.dataOrig = &OD_{st_loc}.x{index:X}_{name}.{name_sub},')
             lines.append(f'{INDENT16}.subIndex = {i},')
-            if i == 0:
-                lines.append(f'{INDENT16}.attribute = ODA_SDO_R,')
-            else:
-                lines.append(f'{INDENT16}.attribute = ODA_SDO_R | ODA_MB,')
+            lines.append(f'{INDENT16}.attribute = {_var_attr_flags(obj[i])},')
             lines.append(f'{INDENT16}.dataLength = {object_type_length(obj[i])}')
             lines.append(INDENT8 + '},')
     lines.append(INDENT4 + '},')
@@ -266,12 +298,12 @@ def write_canopennode_c(eds: EDS, dir_path='') -> None:
     for i in eds.indexes:
         name = camel_case(eds[i].parameter_name)
         if eds[i].object_type == ObjectType.VAR:
-            lines.append(f'{INDENT4}OD_obj_var_t o_{i:X}_{name}')
+            lines.append(f'{INDENT4}OD_obj_var_t o_{i:X}_{name};')
         elif eds[i].object_type == ObjectType.ARRAY:
-            lines.append(f'{INDENT4}OD_obj_array_t o_{i:X}_{name}')
+            lines.append(f'{INDENT4}OD_obj_array_t o_{i:X}_{name};')
         else:
             size = len(eds[i])
-            lines.append(f'{INDENT4}OD_obj_record_t o_{i:X}_{name}[{size}]')
+            lines.append(f'{INDENT4}OD_obj_record_t o_{i:X}_{name}[{size}];')
     lines.append('} ODObjs_t;')
     lines.append('')
 
