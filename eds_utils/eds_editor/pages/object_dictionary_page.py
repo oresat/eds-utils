@@ -8,9 +8,10 @@ from ...core.objects import Variable, Array, Record
 from ..dialogs.errors_dialog import ErrorsDialog
 from ..dialogs.add_object_dialog import AddObjectDialog
 from ..dialogs.copy_object_dialog import CopyObjectDialog
+from .page import Page
 
 
-class ObjectDictionaryPage(Gtk.ScrolledWindow):
+class ObjectDictionaryPage(Page):
     def __init__(self, parent_window: Gtk.Window):
         super().__init__()
 
@@ -345,9 +346,6 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
                     subindex_section = self._eds[index][subindex]
                     self._indexes_store.append(self._indexes_store[-1].iter,
                                                [subindex_str, subindex_section.parameter_name])
-
-    def remove_eds(self):
-        self.eds = None
 
     def add_treeview_obj(self, index: int, subindex: int, name: str):
         index_str = f'0x{index:X}'
