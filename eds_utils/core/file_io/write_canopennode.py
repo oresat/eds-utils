@@ -1,11 +1,9 @@
 '''Everything to write an eds/dcf as CANopenNode OD.[c/h] files'''
 
+from . import INDENT4, INDENT8, INDENT16
 from .. import ObjectType, DataType, StorageLocation, AccessType
 from ..eds import EDS
-
-INDENT4 = ' ' * 4
-INDENT8 = ' ' * 8
-INDENT16 = ' ' * 16
+from ..objects import Variable
 
 DATA_TYPE_LENGTH = {
     DataType.BOOLEAN: 1,
@@ -61,7 +59,7 @@ DATA_TYPE_C_TYPES = {
 
 
 def camel_case(string: str) -> str:
-    '''Conver string to camelCase'''
+    '''Convert string to camelCase'''
 
     if len(string) == 0:
         return ''  # nothing to do
@@ -102,7 +100,7 @@ def camel_case(string: str) -> str:
 
 
 def write_canopennode(eds: EDS, dir_path='') -> None:
-    '''Save an eds/dcf as a CANopenNode OD.[c/h] files
+    '''Save an eds/dcf as CANopenNode OD.[c/h] files
 
     Parameters
     ----------
@@ -123,16 +121,18 @@ def remove_node_id(default_value: str) -> str:
     temp = default_value.split('+')
 
     if len(temp) == 1:
-        return default_value
-    if temp[0] == '$NODEID':
-        return temp[1]
+        return default_value  # does not include $NODEID
+    elif temp[0] == '$NODEID':
+        return temp[1].rsplit()
     elif temp[1] == '$NODEID':
-        return temp[0]
+        return temp[0].rsplit()
 
-    return default_value
+    return default_value  # does not include $NODEID
 
 
-def attr_lines(eds: EDS, index: int):
+def attr_lines(eds: EDS, index: int) -> list:
+    '''Generate attr lines for OD.c for a sepecific index'''
+
     lines = []
 
     obj = eds[index]
@@ -171,39 +171,46 @@ def attr_lines(eds: EDS, index: int):
     return lines
 
 
-def object_type_length(obj) -> int:
-    if obj.data_type in DATA_TYPE_STR:
-        length = len(obj.default_value)
+def _var_data_type_len(var: Variable) -> int:
+    '''Get the length of the variable's data'''
+
+    if var.data_type in DATA_TYPE_STR:
+        length = len(var.default_value)
     else:
-        length = DATA_TYPE_LENGTH[obj.data_type]
+        length = DATA_TYPE_LENGTH[var.data_type]
+
     return length
 
 
-def _var_attr_flags(var):
+def _var_attr_flags(var: Variable) -> str:
+    '''Generate the variable attribute flags str'''
+
     attr_str = ''
 
     if var.access_type in [AccessType.RO, AccessType.CONST]:
         attr_str += 'ODA_SDO_R'
         if var.pdo_mapping:
-            attr_str += '| ODA_TPDO'
+            attr_str += ' | ODA_TPDO'
     elif var.access_type == AccessType.WO:
         attr_str += 'ODA_SDO_W'
         if var.pdo_mapping:
-            attr_str += '| ODA_RPDO'
+            attr_str += ' | ODA_RPDO'
     else:
         attr_str += 'ODA_SDO_RW'
         if var.pdo_mapping:
-            attr_str += '| ODA_TRPDO'
+            attr_str += ' | ODA_TRPDO'
 
     if var.data_type in [DataType.VISIBLE_STRING, DataType.UNICODE_STRING]:
-        attr_str += '| ODA_STR'
+        attr_str += ' | ODA_STR'
     elif DATA_TYPE_LENGTH[var.data_type] > 1:
-        attr_str += '| ODA_MB'
+        attr_str += ' | ODA_MB'
 
     return attr_str
 
 
-def obj_lines(eds: EDS, index):
+def obj_lines(eds: EDS, index) -> list:
+    '''Generate object lines for OD.c for a sepecific index'''
+
     lines = []
 
     obj = eds[index]
@@ -214,22 +221,22 @@ def obj_lines(eds: EDS, index):
         if obj.data_type == DataType.VISIBLE_STRING:
             lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
             lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj)},')
-            lines.append(f'{INDENT8}.dataLength = {object_type_length(obj)}')
+            lines.append(f'{INDENT8}.dataLength = {_var_data_type_len(obj)}')
         elif obj.data_type == DataType.OCTET_STRING:
             lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
             lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj)},')
-            lines.append(f'{INDENT8}.dataLength = {object_type_length(obj) // 2}')
+            lines.append(f'{INDENT8}.dataLength = {_var_data_type_len(obj) // 2}')
         else:
             lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name},')
             lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj)},')
-            lines.append(f'{INDENT8}.dataLength = {object_type_length(obj)}')
+            lines.append(f'{INDENT8}.dataLength = {_var_data_type_len(obj)}')
     elif obj.object_type == ObjectType.ARRAY:
         st_loc = obj.storage_location.name
         lines.append(f'{INDENT8}.dataOrig0 = &OD_{st_loc}.x{index:X}_{name}_sub0,')
         lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
         lines.append(f'{INDENT8}.attribute0 = ODA_SDO_R,')
         lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj[1])},')
-        length = object_type_length(obj)
+        length = _var_data_type_len(obj)
         lines.append(f'{INDENT8}.dataElementLength = {length},')
         if length > 0 and length <= 8:
             lines.append(f'{INDENT8}.dataElementSizeof = sizeof(uint{8 * length}_t)')
@@ -241,7 +248,7 @@ def obj_lines(eds: EDS, index):
             lines.append(f'{INDENT16}.dataOrig = &OD_{st_loc}.x{index:X}_{name}.{name_sub},')
             lines.append(f'{INDENT16}.subIndex = {i},')
             lines.append(f'{INDENT16}.attribute = {_var_attr_flags(obj[i])},')
-            lines.append(f'{INDENT16}.dataLength = {object_type_length(obj[i])}')
+            lines.append(f'{INDENT16}.dataLength = {_var_data_type_len(obj[i])}')
             lines.append(INDENT8 + '},')
     lines.append(INDENT4 + '},')
 
@@ -249,6 +256,17 @@ def obj_lines(eds: EDS, index):
 
 
 def write_canopennode_c(eds: EDS, dir_path='') -> None:
+    '''Save an eds/dcf as a CANopenNode OD.c file
+
+    Parameters
+    ----------
+    eds: EDS
+        eds data structure to save as file
+    dir_path: str
+        Path to directory to output OD.c to. If not set the same dir path as the eds will
+        be used.
+    '''
+
     lines = []
 
     if dir_path:
@@ -344,7 +362,9 @@ def write_canopennode_c(eds: EDS, dir_path='') -> None:
             f.write(i + '\n')
 
 
-def _canopennode_h_lines(eds: EDS, index: int):
+def _canopennode_h_lines(eds: EDS, index: int) -> list:
+    '''Generate struct lines for OD.h for a sepecific index'''
+
     lines = []
 
     obj = eds[index]
@@ -377,6 +397,17 @@ def _canopennode_h_lines(eds: EDS, index: int):
 
 
 def write_canopennode_h(eds: EDS, dir_path='') -> None:
+    '''Save an eds/dcf as a CANopenNode OD.h file
+
+    Parameters
+    ----------
+    eds: EDS
+        eds data structure to save as file
+    dir_path: str
+        Path to directory to output OD.h to. If not set the same dir path as the eds will
+        be used.
+    '''
+
     lines = []
 
     if dir_path:
