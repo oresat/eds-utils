@@ -105,6 +105,9 @@ class DeviceCommissioningPage(Gtk.ScrolledWindow):
         # a set all the after loading the eds
         self.on_cancel_button_clicked(None)
 
+    def remove_eds(self):
+        self.eds = None
+
     def on_update_button_clicked(self, button):
 
         device_comm = self.eds.device_commissioning

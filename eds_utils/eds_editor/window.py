@@ -119,4 +119,7 @@ class AppWindow(Gtk.ApplicationWindow):
             self.save_file(file_path)
 
     def on_click_close(self, button):
-        print('close TODO')
+        self.notebook.hide()
+        self.gi_page.remove_eds()
+        self.od_page.remove_eds()
+        self.dc_page.remove_eds()

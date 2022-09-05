@@ -332,6 +332,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
 
     def load_eds(self, eds: EDS):
         self._eds = eds
+        self._indexes_store.clear()
 
         # fill tree view with object dictionary data
         for index in self._eds.indexes:
@@ -344,6 +345,9 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
                     subindex_section = self._eds[index][subindex]
                     self._indexes_store.append(self._indexes_store[-1].iter,
                                                [subindex_str, subindex_section.parameter_name])
+
+    def remove_eds(self):
+        self.eds = None
 
     def add_treeview_obj(self, index: int, subindex: int, name: str):
         index_str = f'0x{index:X}'

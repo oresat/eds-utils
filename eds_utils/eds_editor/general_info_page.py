@@ -272,6 +272,9 @@ class GeneralInfoPage(Gtk.ScrolledWindow):
         self.group_messaging.set_state(device_info.group_messaging)
         self.lss_support.set_state(device_info.lss_supported)
 
+    def remove_eds(self):
+        self.eds = None
+
     def on_update_button_clicked(self, button):
         '''Save the values from the gui into the data structure'''
 
