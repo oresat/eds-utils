@@ -22,7 +22,7 @@ class ObjectDictionaryPage(Page):
         self._selected_index = None
         self._selected_subindex = None
 
-        box = Gtk.Box(homogeneous=True)
+        box = Gtk.Box()
         self.set_child(box)
 
         box_tree = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5,
