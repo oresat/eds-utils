@@ -1,10 +1,11 @@
+=========
 eds-utils
 =========
 
 A collection of EDS / DCF utilities.
 
 Utilities
----------
+=========
 
 - **eds-editor:** GTK4-based GUI to edit EDS / DCF files.
 - **eds-validate:** CLI to validate EDS / DCF files. Will print all errors to stderr.
@@ -15,10 +16,10 @@ Utilities
 
 
 How To Install
---------------
+==============
 
 Linux
-*****
+-----
 
 - Install GTK4 for your distro
     - For Arch based distros:``$ sudo pacman -S gtk4``
@@ -26,7 +27,7 @@ Linux
 - Install eds-utils with pip: ``$ pip install eds-utils``
 
 MacOS
-*****
+-----
 
 - Install GTK4 for your system
     - With Homebrew:``$ brew install gtk4``
