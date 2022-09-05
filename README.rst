@@ -33,7 +33,7 @@ MacOS
 
 - Install GTK4 for your system
 
-  - With Homebrew:``$ brew install gtk4``
-  - With MacPorts:``$ sudo ports install gtk4``
+  - With Homebrew:``$ brew install gtk4 pyobject3``
+  - With MacPorts:``$ sudo ports install gtk4 py-object3``
 
-- Install eds-utils with pip: ``$ pip install eds-utils``
+- Install eds-utils with pip: ``$ pip3 install eds-utils``
