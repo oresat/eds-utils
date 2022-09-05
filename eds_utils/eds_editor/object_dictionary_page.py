@@ -208,7 +208,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
         self._selected_obj.access_type = list(AccessType)[access_type]
         self._selected_obj.default_value = self._obj_default_value.get_text()
         self._selected_obj.pdo_mapping = self._obj_pdo_mapping.get_state()
-        storage_loc = self._obj_pdo_mapping.get_selected()
+        storage_loc = self._obj_storage_loc.get_selected()
         self._selected_obj.storage_location = list(StorageLocation)[storage_loc]
 
     def on_cancel_button_clicked(self, button):
@@ -285,6 +285,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
 
         # reset this
         self._obj_data_type.set_sensitive(True)
+        self._obj_storage_loc.set_sensitive(True)
 
         if model[treeiter].parent is None:  # index
             index_str = model[treeiter][0]
@@ -300,6 +301,7 @@ class ObjectDictionaryPage(Gtk.ScrolledWindow):
             self._selected_obj = self._eds[index][subindex]
             self._selected_index = index
             self._selected_subindex = subindex
+            self._obj_storage_loc.set_sensitive(False)
 
             if subindex == 0 or self._eds[index].object_type == ObjectType.ARRAY:
                 self._obj_data_type.set_sensitive(False)

@@ -113,8 +113,15 @@ def read_eds(file_path: str) -> (EDS, list):
                 errors.append(f'subindex 0 for {header} was not a UNSIGNED8')
                 var.data_type = DataType.UNSIGNED8
 
+            # set subindex 0's storage_location
+            eds[index][0].storage_location = eds[index].storage_location
+
             index = int(header[1:5], 16)
             subindex = int(header[8:-1], 16)
+
+            if eds[index].storage_location != var.storage_location:
+                errors.append(f'StorageLocation of [{index:X}] and {header} did not match')
+                var.storage_location = eds[index].storage_location
 
             eds[index][subindex] = var
         elif header == '[FileInfo]':
