@@ -2,7 +2,7 @@ from datetime import datetime
 
 from gi.repository import Gtk
 
-from ..core.eds import EDS
+from ...core.eds import EDS
 
 
 class GeneralInfoPage(Gtk.ScrolledWindow):

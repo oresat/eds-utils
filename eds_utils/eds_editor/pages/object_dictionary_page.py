@@ -2,12 +2,12 @@ from copy import deepcopy
 
 from gi.repository import Gtk
 
-from .errors_dialog import ErrorsDialog
-from .add_object_dialog import AddObjectDialog
-from .copy_object_dialog import CopyObjectDialog
-from ..core import DataType, ObjectType, AccessType, StorageLocation, str2int
-from ..core.eds import EDS
-from ..core.objects import Variable, Array, Record
+from ...core import DataType, ObjectType, AccessType, StorageLocation, str2int
+from ...core.eds import EDS
+from ...core.objects import Variable, Array, Record
+from ..dialogs.errors_dialog import ErrorsDialog
+from ..dialogs.add_object_dialog import AddObjectDialog
+from ..dialogs.copy_object_dialog import CopyObjectDialog
 
 
 class ObjectDictionaryPage(Gtk.ScrolledWindow):

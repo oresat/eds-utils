@@ -2,12 +2,12 @@ from os.path import basename
 
 from gi.repository import Gtk
 
-from .errors_dialog import ErrorsDialog
-from .general_info_page import GeneralInfoPage
-from .object_dictionary_page import ObjectDictionaryPage
-from .device_commissioning_page import DeviceCommissioningPage
 from ..core.file_io.read_eds import read_eds
 from ..core.file_io.write_eds import write_eds
+from .dialogs.errors_dialog import ErrorsDialog
+from .pages.general_info_page import GeneralInfoPage
+from .pages.object_dictionary_page import ObjectDictionaryPage
+from .pages.device_commissioning_page import DeviceCommissioningPage
 
 
 class AppWindow(Gtk.ApplicationWindow):

@@ -1,6 +1,6 @@
 from gi.repository import Gtk
 
-from ..core import ObjectType, str2int
+from ...core import ObjectType, str2int
 
 
 class AddObjectDialog(Gtk.Dialog):

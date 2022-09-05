@@ -1,7 +1,7 @@
 from gi.repository import Gtk
 
-from ..core import BAUD_RATE
-from ..core.eds import EDS
+from ...core import BAUD_RATE
+from ...core.eds import EDS
 
 
 class DeviceCommissioningPage(Gtk.ScrolledWindow):
