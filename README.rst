@@ -6,20 +6,29 @@ A collection of EDS / DCF utilities.
 Utilities
 ---------
 
-- **eds-editor:** GTK4-based GUI to edit eds/dcf files
-- **eds-validate:** quick eds/dcf validator
-- **eds2dcf:** quick eds to dcf converter
-- **eds2md:** quick eds/dcf to md converter
-- **eds2rst:** quick eds/dcf to rst converter
+- **eds-editor:** GTK4-based GUI to edit EDS / DCF files.
+- **eds-validate:** CLI to validate EDS / DCF files. Will print all errors to stderr.
+- **eds2c:** CLI to convert a EDS / DCF file to CANopenNode OD.[c/h] files.
+- **eds2dcf:** CLI to convert a EDS to a DCF.
+- **eds2md:** CLI to convert a EDS / DCF file to a md (Markdown) file.
+- **eds2rst:** CLI to convert a EDS / DCF file to a rst (reStructuredText) file.
 
 
-How To Run (From Repo)
-----------------------
+How To Install
+--------------
 
-- Install Python and GTK4 for your system
-- Install python libraries: ``$ pip install -r requirements.txt``
-- To run the eds-editor (requires GTK4): ``$ python -m eds_utils eds-editor``
-- To run the eds-validate: ``$ python -m eds_utils eds-validate EDS_FILE``
-- To run the eds2dcf: ``$ python -m eds_utils eds2dcf EDS_FILE``
-- To run the eds2md: ``$ python -m eds_utils eds2md EDS_FILE``
-- To run the eds2rst: ``$ python -m eds_utils eds2rst EDS_FILE``
+Linux
+*****
+
+- Install GTK4 for your distro
+    - For Arch based distros:``$ sudo pacman -S gtk4``
+    - For Debian based distros:``$ sudo apt install gtk4``
+- Install eds-utils with pip: ``$ pip install eds-utils``
+
+MacOS
+*****
+
+- Install GTK4 for your system
+    - With Homebrew:``$ brew install gtk4``
+    - With MacPorts:``$ sudo ports install gtk4``
+- Install eds-utils with pip: ``$ pip install eds-utils``
