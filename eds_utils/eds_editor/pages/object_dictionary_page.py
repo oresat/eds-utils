@@ -275,8 +275,11 @@ class ObjectDictionaryPage(Page):
             self._obj_low_limit.set_text(self._selected_obj.low_limit)
             self._obj_high_limit.set_text(self._selected_obj.high_limit)
         elif self._selected_obj.object_type == ObjectType.ARRAY:
-            data_type = self._selected_obj[1].data_type
-            self._obj_data_type.set_selected(list(DataType).index(data_type))
+            if len(self._selected_obj) > 1:
+                data_type = self._selected_obj[1].data_type
+                self._obj_data_type.set_selected(list(DataType).index(data_type))
+            else:  # array is empty, use dafault
+                self._obj_data_type.set_selected(0)
 
     def on_tree_selection_changed(self, selection):
         model, treeiter = selection.get_selected()
@@ -287,6 +290,7 @@ class ObjectDictionaryPage(Page):
         # reset this
         self._obj_data_type.set_sensitive(True)
         self._obj_storage_loc.set_sensitive(True)
+        self._obj_default_value.set_sensitive(True)
 
         if model[treeiter].parent is None:  # index
             index_str = model[treeiter][0]
@@ -304,7 +308,10 @@ class ObjectDictionaryPage(Page):
             self._selected_subindex = subindex
             self._obj_storage_loc.set_sensitive(False)
 
-            if subindex == 0 or self._eds[index].object_type == ObjectType.ARRAY:
+            if subindex == 0:
+                self._obj_data_type.set_sensitive(False)
+                self._obj_default_value.set_sensitive(False)
+            elif self._eds[index].object_type == ObjectType.ARRAY:
                 self._obj_data_type.set_sensitive(False)
 
         if self._selected_obj.object_type == ObjectType.ARRAY:
@@ -440,10 +447,17 @@ class ObjectDictionaryPage(Page):
             self._eds[new_index] = obj
         else:
             obj = Variable()
+            if new_obj_type == ObjectType.ARRAY:
+                # all data types in arrays must match
+                obj.data_type = self._eds[new_index].data_type
             self._eds[new_index][new_subindex] = obj
 
         # add new object to treeview
         self.add_treeview_obj(new_index, new_subindex, obj.parameter_name)
+
+        # add subindex0 for new arrays and records to treeview
+        if new_obj_type in [ObjectType.ARRAY, ObjectType.RECORD]:
+            self.add_treeview_obj(new_index, 0, obj[0].parameter_name)
 
     def check_selected(self):
 
