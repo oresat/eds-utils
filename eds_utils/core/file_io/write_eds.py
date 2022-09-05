@@ -131,16 +131,17 @@ def _objects_lines(eds: EDS, indexes: list, dcf=False) -> list:
     for i in indexes:
         obj = eds[i]
         if isinstance(obj, Variable):
-            lines += _variable_lines(obj, i, dcf=dcf)
+            lines += _variable_lines(obj, i, dcf=dcf, canopennode=eds.canopennode)
         elif isinstance(obj, Array):
-            lines += _array_lines(obj, i, dcf=dcf)
+            lines += _array_lines(obj, i, dcf=dcf, canopennode=eds.canopennode)
         elif isinstance(obj, Record):
-            lines += _record_lines(obj, i, dcf=dcf)
+            lines += _record_lines(obj, i, dcf=dcf, canopennode=eds.canopennode)
 
     return lines
 
 
-def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False) -> list:
+def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False,
+                    canopennode=False) -> list:
     lines = []
 
     if variable.comments:
@@ -156,6 +157,8 @@ def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False) ->
     if dcf and variable.denotation:
         lines.append(f'Denotation={variable.denotation}')
     lines.append(f'ObjectType={ObjectType.VAR.to_str()}')
+    if canopennode:  # optional, for CANopenNode suppport
+        lines.append(f';StorageLocation={variable.storage_location.name}')
     lines.append(f'DataType={variable.data_type.to_str()}')
     lines.append(f'AccessType={variable.access_type.to_str()}')
     if variable.default_value:  # optional
@@ -171,7 +174,7 @@ def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False) ->
     return lines
 
 
-def _array_lines(array: Array, index: int, dcf=False) -> list:
+def _array_lines(array: Array, index: int, dcf=False, canopennode=False) -> list:
     lines = []
 
     if array.comments:
@@ -184,16 +187,18 @@ def _array_lines(array: Array, index: int, dcf=False) -> list:
     if dcf and array.denotation:
         lines.append(f'Denotation={array.denotation}')
     lines.append(f'ObjectType={ObjectType.ARRAY.to_str()}')
+    if canopennode:  # optional, for CANopenNode suppport
+        lines.append(f';StorageLocation={array.storage_location.name}')
     lines.append(f'SubNumber={len(array)}')
     lines.append('')
 
     for i in array.subindexes:
-        lines += _variable_lines(array[i], index, i)
+        lines += _variable_lines(array[i], index, i, dcf, canopennode)
 
     return lines
 
 
-def _record_lines(record: Record, index: int, dcf=False) -> list:
+def _record_lines(record: Record, index: int, dcf=False, canopennode=False) -> list:
     lines = []
 
     if record.comments:
@@ -206,10 +211,12 @@ def _record_lines(record: Record, index: int, dcf=False) -> list:
     if dcf and record.denotation:
         lines.append(f'Denotation={record.denotation}')
     lines.append(f'ObjectType={ObjectType.RECORD.to_str()}')
+    if canopennode:  # optional, for CANopenNode suppport
+        lines.append(f';StorageLocation={record.storage_location.name}')
     lines.append(f'SubNumber={len(record)}')
     lines.append('')
 
     for i in record.subindexes:
-        lines += _variable_lines(record[i], index, i)
+        lines += _variable_lines(record[i], index, i, dcf, canopennode)
 
     return lines

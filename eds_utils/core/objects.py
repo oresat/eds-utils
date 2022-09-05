@@ -1,6 +1,6 @@
 '''All the object class for the object dictionary'''
 
-from . import DataType, AccessType, ObjectType
+from . import DataType, AccessType, ObjectType, StorageLocation
 
 
 class Variable:
@@ -17,6 +17,7 @@ class Variable:
         self.access_type = AccessType.RW
         self.pdo_mapping = False
         self.object_type = ObjectType.VAR
+        self.storage_location = StorageLocation.RAM  # for CANopenNode support
 
 
 class Record:
@@ -35,6 +36,7 @@ class Record:
         self.comments = ''
         self._data = {}
         self.object_type = ObjectType.RECORD
+        self._storage_location = StorageLocation.RAM  # for CANopenNode support
 
         var = Variable()
         var.parameter_name = 'Highest sub-index supported'
@@ -80,6 +82,20 @@ class Record:
         '''Get the list of subindexes'''
 
         return sorted(self._data.keys())
+
+    @property
+    def storage_location(self) -> StorageLocation:
+        '''The storage location of object'''
+
+        return self._storage_location
+
+    @storage_location.setter
+    def storage_location(self, storage_location: StorageLocation):
+
+        for i in self._data:
+            self._data[i].storage_location = storage_location
+
+        self._storage_location = storage_location
 
 
 class Array(Record):

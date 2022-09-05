@@ -3,7 +3,7 @@
 import re
 from datetime import datetime
 
-from .. import DataType, ObjectType, AccessType, BAUD_RATE, str2int
+from .. import DataType, ObjectType, AccessType, BAUD_RATE, str2int, StorageLocation
 from ..eds import EDS, FileInfo, DeviceInfo, DeviceCommissioning
 from ..objects import Variable, Array, Record
 
@@ -11,6 +11,7 @@ VARIABLE_ENTRIES = [
     'ParameterName',
     'Denotation',
     'ObjectType',
+    ';StorageLocation',
     'DataType',
     'LowLimit',
     'HighLimit',
@@ -24,6 +25,7 @@ ARRAY_RECORD_ENTRIES = [
     'ParameterName',
     'Denotation',
     'ObjectType',
+    ';StorageLocation',
     'SubNumber',
 ]
 '''All valid entries in an array and record'''
@@ -54,6 +56,12 @@ def read_eds(file_path: str) -> (EDS, list):
 
     with open(file_path, 'r') as fptr:
         raw = fptr.read()
+
+    # check for CANopenNode eds/dcf
+    for line in raw.split('\n'):
+        if line.startswith(';StorageLocation'):
+            eds.canopennode = True
+            break
 
     for section_lines in raw.split('\n\n'):
         if section_lines == '':
@@ -105,8 +113,15 @@ def read_eds(file_path: str) -> (EDS, list):
                 errors.append(f'subindex 0 for {header} was not a UNSIGNED8')
                 var.data_type = DataType.UNSIGNED8
 
+            # set subindex 0's storage_location
+            eds[index][0].storage_location = eds[index].storage_location
+
             index = int(header[1:5], 16)
             subindex = int(header[8:-1], 16)
+
+            if eds[index].storage_location != var.storage_location:
+                errors.append(f'StorageLocation of [{index:X}] and {header} did not match')
+                var.storage_location = eds[index].storage_location
 
             eds[index][subindex] = var
         elif header == '[FileInfo]':
@@ -198,6 +213,13 @@ def _read_variable(header: str, lines: dict, comments: str) -> (Variable, list):
     if 'HighLimit' in lines:  # optional
         var.high_limit = lines['HighLimit']
 
+    if ';StorageLocation' in lines:  # optional, for CANopenNode support
+        try:
+            storage_location = lines[';StorageLocation']
+            var.storage_location = StorageLocation[storage_location]
+        except KeyError:
+            errors.append(f'StorageLocation value of {storage_location} is invalid in {header}')
+
     for i in lines:
         if i not in VARIABLE_ENTRIES:
             errors.append(f'Unknown entry "{i}" in {header}')
@@ -236,6 +258,13 @@ def _read_array(header: str, lines: dict, comments: str) -> (Array, list):
 
     if 'Denotation' in lines:
         arr.denotation = lines['Denotation']
+
+    if ';StorageLocation' in lines:  # optional, for CANopenNode support
+        try:
+            storage_location = lines[';StorageLocation']
+            arr.storage_location = StorageLocation[storage_location]
+        except KeyError:
+            errors.append(f'StorageLocation value of {storage_location} is invalid in {header}')
 
     # NOTE: SubNumber is mandatory entry, but is not used by Array class
 
@@ -277,6 +306,13 @@ def _read_record(header: str, lines: dict, comments: str) -> (Record, list):
 
     if 'Denotation' in lines:
         rec.denotation = lines['Denotation']
+
+    if ';StorageLocation' in lines:  # optional, for CANopenNode support
+        try:
+            storage_location = lines[';StorageLocation']
+            rec.storage_location = StorageLocation[storage_location]
+        except KeyError:
+            errors.append(f'StorageLocation value of {storage_location} is invalid in {header}')
 
     # NOTE: SubNumber is mandatory entry, but is not used by Record class
 

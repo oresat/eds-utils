@@ -96,12 +96,16 @@ def write_md(eds: EDS, file_path='', dcf=False) -> None:
 
     # TODO comments
     lines.append('## Comments')
+    lines.append('')
     lines.append('TBD')
     lines.append('')
 
     lines.append('## Objects')
     lines.append('')
     lines += _objects_lines(eds, eds.indexes)
+
+    # remove trailing new line
+    lines = lines[:-1]
 
     with open(file_path, 'w') as f:
         for i in lines:
@@ -114,22 +118,24 @@ def _objects_lines(eds: EDS, indexes: list, dcf=False) -> list:
     for i in indexes:
         obj = eds[i]
         if isinstance(obj, Variable):
-            lines += _variable_lines(obj, i, dcf=dcf)
+            lines += _variable_lines(obj, i, dcf=dcf, canopennode=eds.canopennode)
         elif isinstance(obj, Array):
-            lines += _array_lines(obj, i, dcf=dcf)
+            lines += _array_lines(obj, i, dcf=dcf, canopennode=eds.canopennode)
         elif isinstance(obj, Record):
-            lines += _record_lines(obj, i, dcf=dcf)
+            lines += _record_lines(obj, i, dcf=dcf, canopennode=eds.canopennode)
 
     return lines
 
 
-def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False) -> list:
+def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False,
+                    canopennode=False) -> list:
     lines = []
 
     if subindex is None:
         lines.append(f'### {variable.parameter_name} (index 0x{index:X})')
     else:
-        lines.append(f'#### {variable.parameter_name} (index 0x{index:X} - subindex 0x{subindex:X})')
+        lines.append(f'#### {variable.parameter_name} (index 0x{index:X} - '
+                     f'subindex 0x{subindex:X})')
     lines.append('')
 
     if variable.comments:
@@ -142,6 +148,8 @@ def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False) ->
     if dcf and variable.denotation:
         lines.append(f'Denotation|{variable.denotation}')
     lines.append(f'Object Type|{ObjectType.VAR.name}')
+    if canopennode:  # optional, for CANopenNode suppport
+        lines.append(f'Storage Location|{variable.storage_location.name}')
     lines.append(f'Data Type|{variable.data_type.name}')
     lines.append(f'Access Type|{variable.access_type.to_str()}')
     if variable.default_value:  # optional
@@ -157,7 +165,7 @@ def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False) ->
     return lines
 
 
-def _array_lines(array: Array, index: int, dcf=False) -> list:
+def _array_lines(array: Array, index: int, dcf=False, canopennode=False) -> list:
     lines = []
 
     lines.append(f'### {array.parameter_name} (index 0x{index:X})')
@@ -177,12 +185,12 @@ def _array_lines(array: Array, index: int, dcf=False) -> list:
     lines.append('')
 
     for i in array.subindexes:
-        lines += _variable_lines(array[i], index, i)
+        lines += _variable_lines(array[i], index, i, dcf, canopennode)
 
     return lines
 
 
-def _record_lines(record: Record, index: int, dcf=False) -> list:
+def _record_lines(record: Record, index: int, dcf=False, canopennode=False) -> list:
     lines = []
 
     lines.append(f'### {record.parameter_name} (index 0x{index:X})')
@@ -202,6 +210,6 @@ def _record_lines(record: Record, index: int, dcf=False) -> list:
     lines.append('')
 
     for i in record.subindexes:
-        lines += _variable_lines(record[i], index, i)
+        lines += _variable_lines(record[i], index, i, dcf, canopennode)
 
     return lines
