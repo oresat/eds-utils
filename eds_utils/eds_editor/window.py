@@ -65,12 +65,15 @@ class AppWindow(Gtk.ApplicationWindow):
     def show_open_dialog(self, button):
         self.open_dialog.show()
 
+    def open_eds(self, file_path: str):
+        eds_notebook = EDSNotebook(file_path, self)
+        self.stack.add_titled(eds_notebook, None, eds_notebook.eds_file)
+
     def open_response(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
             file = dialog.get_file()
             file_path = file.get_path()
-            eds_notebook = EDSNotebook(file_path, self)
-            self.stack.add_titled(eds_notebook, None, eds_notebook.eds_file)
+            self.open_eds(file_path)
 
     def on_click_save(self, button):
         eds_notebook = self.stack.get_visible_child()

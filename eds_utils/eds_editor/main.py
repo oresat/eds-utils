@@ -12,11 +12,11 @@ def eds_editor(sys_args=None):
 
     name = 'eds-editor'
     parser = argparse.ArgumentParser(description=EDS_EDITOR_DESCRIPTION, prog=name)
-    parser.add_argument('filepath', nargs='*', default='', metavar='FILEPATH',
+    parser.add_argument('filepaths', nargs='*', default='', metavar='FILEPATH',
                         help='file path(s) to EDS file(s)')
     args = parser.parse_args(sys_args)
 
     app = App()
-    if args.filepath:
-        app.open_file(args.filepath[0])  # TODO handle multiple files
+    for i in args.filepaths:
+        app.open_eds(i)
     app.run()

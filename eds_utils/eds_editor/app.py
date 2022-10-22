@@ -9,15 +9,15 @@ class App(Gtk.Application):
         super().__init__(*args, **kwargs)
 
         self.win = None
-        self.file_path = None
+        self.file_paths = []
 
         self.connect('activate', self.on_activate)
 
-    def open_file(self, file_path: str):
-        self.file_path = file_path
+    def open_eds(self, file_path: str):
+        self.file_paths.append(file_path)
 
     def on_activate(self, app):
         self.win = AppWindow(application=app, title='EDS Editor')
-        if self.file_path:
-            self.win.open_file(self.file_path)
+        for i in self.file_paths:
+            self.win.open_eds(i)
         self.win.present()
