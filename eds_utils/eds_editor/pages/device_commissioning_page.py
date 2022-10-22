@@ -106,6 +106,7 @@ class DeviceCommissioningPage(Page):
 
     def on_update_button_clicked(self, button):
 
+        self._eds_changed = True
         device_comm = self._eds.device_commissioning
         device_comm.node_name = self._node_name.get_text()
         device_comm.node_id = int(self._node_id.get_value())

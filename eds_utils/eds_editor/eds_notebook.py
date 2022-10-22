@@ -1,6 +1,7 @@
+from os import remove
 from os.path import basename
 
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 
 from ..core.file_io.read_eds import read_eds
 from ..core.file_io.write_eds import write_eds
@@ -18,6 +19,7 @@ class EDSNotebook(Gtk.Notebook):
         self.parent_window = parent_window
 
         self.file_path = file_path
+        self.tmp_file_path = file_path + '.tmp'
         self.eds, errors = read_eds(self.file_path)
 
         if errors:
@@ -37,6 +39,15 @@ class EDSNotebook(Gtk.Notebook):
         self.od_page.load_eds(self.eds)
         self.dc_page.load_eds(self.eds)
 
+        GLib.timeout_add_seconds(30, self._save_eds_tmp)
+
+    def _eds_changed_reset(self):
+        '''Reset the eds changed flags'''
+
+        self.gi_page.eds_changed_reset()
+        self.od_page.eds_changed_reset()
+        self.dc_page.eds_changed_reset()
+
     def save_eds(self, file_path=''):
 
         if file_path:
@@ -44,6 +55,36 @@ class EDSNotebook(Gtk.Notebook):
 
         write_eds(self.eds, file_path)
 
+        self._eds_changed_reset()
+
+        # remove temp
+        try:
+            remove(self.tmp_file_path)
+        except OSError:
+            pass
+
+    def _save_eds_tmp(self):
+        '''Save a tempory eds file'''
+
+        if self.eds_changed:
+            write_eds(self.eds, self.tmp_file_path)
+
+            self._eds_changed_reset()
+
+        return True
+
     @property
     def eds_file(self) -> str:
+        '''str: The EDS file name.'''
+
         return basename(self.file_path)
+
+    @property
+    def eds_changed(self) -> bool:
+        '''bool: Flag if the eds file has change and not been saved.'''
+
+        ret = False
+        if self.gi_page.eds_changed or self.od_page.eds_changed or self.dc_page.eds_changed:
+            ret = True
+
+        return ret

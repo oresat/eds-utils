@@ -282,6 +282,8 @@ class GeneralInfoPage(Page):
         if self._eds is None:
             return
 
+        self._eds_changed = True
+
         file_info = self._eds.file_info
         device_info = self._eds.device_info
 

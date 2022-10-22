@@ -201,6 +201,8 @@ class ObjectDictionaryPage(Page):
         if self._selected_obj is None:
             return
 
+        self._eds_changed = True
+
         self._selected_obj.parameter_name = self._obj_parameter_name.get_text()
         buf = self._obj_comment.get_buffer()
         self._selected_obj.comments = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
@@ -415,6 +417,8 @@ class ObjectDictionaryPage(Page):
 
     def update_obj(self, index: int, subindex: int, name: str):
 
+        self._eds_changed = True
+
         for i in self._indexes_store:
             if index == str2int(i[0]):
                 if self._selected_subindex is None:  # remove index
@@ -434,6 +438,8 @@ class ObjectDictionaryPage(Page):
         dialog.show()
 
     def add_treeview_object_response(self, dialog: Gtk.Dialog, response: int) -> None:
+
+        self._eds_changed = True
 
         new_index, new_subindex, new_obj_type = dialog.get_response()
 
@@ -485,6 +491,8 @@ class ObjectDictionaryPage(Page):
         if self._selected_index not in self._eds.indexes:
             return  # nothing to delete
 
+        self._eds_changed = True
+
         # remove from od
         if self._selected_subindex is None:
             del self._eds[self._selected_index]
@@ -502,6 +510,8 @@ class ObjectDictionaryPage(Page):
         dialog.show()
 
     def copy_treeview_object_response(self, dialog: Gtk.Dialog, response: int) -> None:
+
+        self._eds_changed = True
 
         new_index, new_subindex = dialog.get_response()
 
@@ -536,6 +546,8 @@ class ObjectDictionaryPage(Page):
         dialog.show()
 
     def move_treeview_object_response(self, dialog: Gtk.Dialog, response: int) -> None:
+
+        self._eds_changed = True
 
         new_index, new_subindex = dialog.get_response()
 
