@@ -93,6 +93,7 @@ class ObjectDictionaryPage(Page):
         grid = Gtk.Grid(column_spacing=5, row_spacing=5,
                         column_homogeneous=True, row_homogeneous=True,
                         margin_top=5, margin_bottom=5, margin_start=5, margin_end=5)
+        frame.set_valign(Gtk.Align.START)
         frame.set_child(grid)
 
         label = Gtk.Label.new('Parameter Name:')

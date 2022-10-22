@@ -1,35 +1,19 @@
-from os.path import basename
-
 from gi.repository import Gtk
 
-from ..core.file_io.read_eds import read_eds
-from ..core.file_io.write_eds import write_eds
-from .dialogs.errors_dialog import ErrorsDialog
-from .pages.general_info_page import GeneralInfoPage
-from .pages.object_dictionary_page import ObjectDictionaryPage
-from .pages.device_commissioning_page import DeviceCommissioningPage
+from .eds_notebook import EDSNotebook
 
 
 class AppWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.eds = None
-        self.file_path = None
-
-        self.notebook = Gtk.Notebook()
-        self.notebook.hide()
-        self.set_child(self.notebook)
-
-        self.gi_page = GeneralInfoPage()
-        self.od_page = ObjectDictionaryPage(self)
-        self.dc_page = DeviceCommissioningPage()
-
-        self.notebook.append_page(self.gi_page, Gtk.Label.new('General Info'))
-        self.notebook.append_page(self.od_page, Gtk.Label.new('Object Dictionary'))
-        self.notebook.append_page(self.dc_page, Gtk.Label.new('Device Commissioning'))
+        self.stack = Gtk.Stack.new()
+        self.set_child(self.stack)
 
         self.header = Gtk.HeaderBar()
+        stack_switcher = Gtk.StackSwitcher().new()
+        stack_switcher.set_stack(self.stack)
+        self.header.set_title_widget(stack_switcher)
         self.set_titlebar(self.header)
 
         f = Gtk.FileFilter()
@@ -75,24 +59,6 @@ class AppWindow(Gtk.ApplicationWindow):
         button.connect('clicked', self.on_click_save)
         self.header.pack_end(button)
 
-    def open_file(self, file_path):
-        self.file_path = file_path
-        self.header.set_title_widget(Gtk.Label.new(basename(file_path)))
-        self.eds, errors = read_eds(file_path)
-
-        if errors:
-            errors_dialog = ErrorsDialog(self)
-            errors_dialog.errors = errors
-            errors_dialog.show()
-
-        self.gi_page.load_eds(self.eds)
-        self.od_page.load_eds(self.eds)
-        self.dc_page.load_eds(self.eds)
-        self.notebook.show()
-
-    def save_file(self, file_path: str = ''):
-        write_eds(self.eds, file_path)
-
     def show_new_dialog(self, button):
         print('new TODO')
 
@@ -103,23 +69,30 @@ class AppWindow(Gtk.ApplicationWindow):
         if response == Gtk.ResponseType.ACCEPT:
             file = dialog.get_file()
             file_path = file.get_path()
-            self.open_file(file_path)
+            eds_notebook = EDSNotebook(file_path, self)
+            self.stack.add_titled(eds_notebook, None, eds_notebook.eds_file)
 
     def on_click_save(self, button):
-        if self.file_path:
-            self.save_file(self.file_path)
+        eds_notebook = self.stack.get_visible_child()
+        if eds_notebook:
+            eds_notebook.save_eds()
 
     def show_save_as_dialog(self, button):
         self.save_as_dialog.show()
 
     def save_as_response(self, dialog, response):
         if response == Gtk.ResponseType.ACCEPT:
-            file = dialog.get_file()
-            file_path = file.get_path()
-            self.save_file(file_path)
+            eds_notebook = self.stack.get_visible_child()
+            if eds_notebook:
+                file = dialog.get_file()
+                file_path = file.get_path()
+                eds_notebook.save_eds(file_path)
 
     def on_click_close(self, button):
-        self.notebook.hide()
-        self.gi_page.remove_eds()
-        self.od_page.remove_eds()
-        self.dc_page.remove_eds()
+        child = self.stack.get_visible_child()
+        self.stack.remove(child)
+
+        pages = self.stack.get_pages()
+        if pages:
+            child = pages[0].get_child()
+            self.stack.set_visible_child(child)
