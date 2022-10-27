@@ -99,7 +99,7 @@ def camel_case(string: str) -> str:
     return name
 
 
-def write_canopennode(eds: EDS, dir_path='') -> None:
+def write_canopennode(eds: EDS, dir_path=''):
     '''Save an eds/dcf as CANopenNode OD.[c/h] files
 
     Parameters
@@ -255,7 +255,7 @@ def obj_lines(eds: EDS, index) -> list:
     return lines
 
 
-def write_canopennode_c(eds: EDS, dir_path='') -> None:
+def write_canopennode_c(eds: EDS, dir_path=''):
     '''Save an eds/dcf as a CANopenNode OD.c file
 
     Parameters
@@ -396,7 +396,7 @@ def _canopennode_h_lines(eds: EDS, index: int) -> list:
     return lines
 
 
-def write_canopennode_h(eds: EDS, dir_path='') -> None:
+def write_canopennode_h(eds: EDS, dir_path=''):
     '''Save an eds/dcf as a CANopenNode OD.h file
 
     Parameters

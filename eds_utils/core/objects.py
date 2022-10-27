@@ -58,7 +58,7 @@ class Record:
     def __getitem__(self, subindex: int) -> Variable:
         return self._data[subindex]
 
-    def __setitem__(self, subindex: int, variable: Variable) -> None:
+    def __setitem__(self, subindex: int, variable: Variable):
         '''Add a subindex to the record'''
 
         if subindex == 0:  # overwrite entries in subindex 0
@@ -72,7 +72,7 @@ class Record:
             # update record size subindex
             self._data[0].default_value = f'0x{len(self._data) - 1:02X}'
 
-    def __delitem__(self, subindex: int) -> None:
+    def __delitem__(self, subindex: int):
         '''Remove a subindex from the record'''
 
         if subindex == 0:
@@ -121,7 +121,7 @@ class Array(Record):
         self.object_type = ObjectType.ARRAY
         self._data_type = None
 
-    def __setitem__(self, subindex: int, variable: Variable) -> None:
+    def __setitem__(self, subindex: int, variable: Variable):
         '''Add a subindex to the array'''
 
         if subindex == 0:  # overwrite entries in subindex 0
@@ -143,7 +143,7 @@ class Array(Record):
         return self._data_type
 
     @data_type.setter
-    def data_type(self, data_type: DataType) -> None:
+    def data_type(self, data_type: DataType):
         self._data_type = data_type
 
         for i in self._data:

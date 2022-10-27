@@ -12,7 +12,17 @@ from .pages.device_commissioning_page import DeviceCommissioningPage
 
 
 class EDSNotebook(Gtk.Notebook):
+
     def __init__(self, file_path: str, parent_window: Gtk.Window):
+        '''
+        Parameters
+        ----------
+        file_path: str
+            THe path to the eds/dcf file to edit.
+        parent_window: Gtk.Window
+            The parent window to open dialogs with (dialogs require references to the parent
+            window).
+        '''
         super().__init__()
 
         # need the parent window for dialogs
@@ -27,18 +37,15 @@ class EDSNotebook(Gtk.Notebook):
             errors_dialog.errors = errors
             errors_dialog.show()
 
-        self.gi_page = GeneralInfoPage()
-        self.od_page = ObjectDictionaryPage(self.parent_window)
-        self.dc_page = DeviceCommissioningPage()
+        self.gi_page = GeneralInfoPage(self.eds)
+        self.od_page = ObjectDictionaryPage(self.eds, self.parent_window)
+        self.dc_page = DeviceCommissioningPage(self.eds)
 
         self.append_page(self.gi_page, Gtk.Label.new('General Info'))
         self.append_page(self.od_page, Gtk.Label.new('Object Dictionary'))
         self.append_page(self.dc_page, Gtk.Label.new('Device Commissioning'))
 
-        self.gi_page.load_eds(self.eds)
-        self.od_page.load_eds(self.eds)
-        self.dc_page.load_eds(self.eds)
-
+        # save a tempory eds file at an interval
         GLib.timeout_add_seconds(30, self._save_eds_tmp)
 
     def _eds_changed_reset(self):
@@ -49,6 +56,7 @@ class EDSNotebook(Gtk.Notebook):
         self.dc_page.eds_changed_reset()
 
     def save_eds(self, file_path=''):
+        '''Save the eds file'''
 
         if file_path:
             file_path = self.file_path
@@ -66,7 +74,7 @@ class EDSNotebook(Gtk.Notebook):
     def _save_eds_tmp(self):
         '''Save a tempory eds file'''
 
-        if self.eds_changed:
+        if self.eds_changed:  # only save a temp if something has changed
             write_eds(self.eds, self.tmp_file_path)
 
             self._eds_changed_reset()

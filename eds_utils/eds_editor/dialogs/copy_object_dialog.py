@@ -1,11 +1,29 @@
 from gi.repository import Gtk
 
 from ...core import ObjectType, str2int
+from ...core.eds import EDS
 
 
 class CopyObjectDialog(Gtk.Dialog):
+    '''Gtk Dialog to move or copy an object to a different index / subindex in the object
+    dictionary.'''
 
-    def __init__(self, parent, eds, index, subindex=None, move=False):
+    def __init__(self, parent: Gtk.Window, eds: EDS, index: int, subindex: int = None, move=False):
+        '''
+        Parameter
+        ---------
+        parent: Gtk.Window
+            The parent window to attach to.
+        eds: EDS
+            The eds object to check if new object already exist. Dialog does not add new object.
+        index: int
+            The index of object to move/copy.
+        subindex: int
+            Optional: The subindex of object to move/copy.
+        move: bool
+            If True move the object to new index and subindex, if False copy the object to the new
+            index and subindex.
+        '''
 
         if move:
             title = 'Move object to new index/subindex'
@@ -74,7 +92,9 @@ class CopyObjectDialog(Gtk.Dialog):
         button.connect('clicked', self.on_cancel_button_clicked)
         grid.attach(button, column=2, row=3, width=1, height=1)
 
-    def on_copy_button_clicked(self, button):
+    def on_copy_button_clicked(self, button: Gtk.Button):
+        '''On the move/copy button clicked, validate all the fields and display any errors or send
+        the response and close the dialog.'''
 
         errors = []
         index = None
@@ -119,10 +139,21 @@ class CopyObjectDialog(Gtk.Dialog):
         self.response(1)
         self.destroy()
 
-    def on_cancel_button_clicked(self, button):
+    def on_cancel_button_clicked(self, button: Gtk.Button):
+        '''On the cancel button clicked, close the dialog.'''
 
         self.destroy()
 
     def get_response(self) -> (int, int):
+        '''
+        Get the custom response from the dialog.
+
+        Returns
+        -------
+        int
+            The index of the new object to add.
+        int
+            The subindex of the new object to add. Can be set to `None`.
+        '''
 
         return self._new_index, self._new_subindex

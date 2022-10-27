@@ -1,62 +1,64 @@
 from datetime import datetime
+from dataclasses import dataclass, field
+from typing import Dict
 
 from . import DataType
 from .objects import Variable, Record
 
 
+@dataclass
 class FileInfo:
 
-    def __init__(self):
-        self.file_name = 'new_file.eds'
-        self.file_version = 0
-        self.file_revision = 0
-        self.eds_version = '4.0'
-        self.description = ''
-        self.creation_dt = datetime.now()
-        self.created_by = ''
-        self.modification_dt = datetime.now()
-        self.modified_by = ''
+    file_name: str = 'new_file.eds'
+    file_version: int = 0
+    file_revision: int = 0
+    eds_version: str = '4.0'
+    description: str = ''
+    creation_dt: datetime = datetime.now()
+    created_by: str = ''
+    modification_dt: datetime = datetime.now()
+    modified_by: str = ''
 
 
+@dataclass
 class DeviceInfo:
 
-    def __init__(self):
-        self.vender_name = ''
-        self.vender_number = 0
-        self.product_name = ''
-        self.product_number = 0
-        self.revision_number = 0
-        self.order_code = ''
-        self.baud_rate = {
-            10: True,
-            20: True,
-            50: True,
-            125: True,
-            250: True,
-            500: True,
-            800: True,
-            1000: True,
-        }
-        self.simple_boot_up_master = False
-        self.simple_boot_up_slave = False
-        self.grandularity = 8
-        self.dynamic_channel_supperted = False
-        self.group_messaging = False
-        self.num_of_rpdo = 0
-        self.num_of_tpdo = 0
-        self.lss_supported = False
+    vender_name: str = ''
+    vender_number: int = 0
+    product_name: str = ''
+    product_number: int = 0
+    revision_number: int = 0
+    order_code: int = ''
+    baud_rate: Dict[int, bool] = field(default_factory=lambda: ({
+        10: True,
+        20: True,
+        50: True,
+        125: True,
+        250: True,
+        500: True,
+        800: True,
+        1000: True,
+    }))
+    simple_boot_up_master: bool = False
+    simple_boot_up_slave: bool = False
+    grandularity: int = 8
+    dynamic_channel_supperted: bool = False
+    group_messaging: bool = False
+    num_of_rpdo: int = 0
+    num_of_tpdo: int = 0
+    lss_supported: bool = False
 
 
+@dataclass
 class DeviceCommissioning:
 
-    def __init__(self):
-        self.node_id = 1
-        self.node_name = ''
-        self.baud_rate = 1000
-        self.net_number = 0
-        self.network_name = ''
-        self.canopen_manager = False
-        self.lss_serialnumber = 0
+    node_id: int = 1
+    node_name: str = ''
+    baud_rate: int = 1000
+    net_number: int = 0
+    network_name: str = ''
+    canopen_manager: bool = False
+    lss_serialnumber: int = 0
 
 
 class EDS:
@@ -91,7 +93,7 @@ class EDS:
     def __delitem__(self, index: int):
         del self._data[index]
 
-    def insert(self, index: int, subindex: int, item) -> None:
+    def insert(self, index: int, subindex: int, item):
         '''Insert a object into the object dictionary'''
 
         if index in self._data:
@@ -106,7 +108,7 @@ class EDS:
         else:
             self._data[index].insert(subindex, item)
 
-    def remove(self, index: int, subindex: int = None) -> None:
+    def remove(self, index: int, subindex: int = None):
         '''Remove a object from the object dictionary'''
 
         if subindex is None:  # use only index
@@ -114,7 +116,7 @@ class EDS:
         else:  # use index and subindex
             del self._data[index][subindex]
 
-    def add_rpdo(self) -> None:
+    def add_rpdo(self):
         '''Add RPDO to the object dictionary'''
 
         # find next rpdo splot
@@ -153,7 +155,7 @@ class EDS:
             para_rec[i] = Variable(parameter_name=f'Application object {i}')
         self._data[self.RPDO_PARA_START + next_rpdo] = para_rec
 
-    def add_tpdo(self) -> None:
+    def add_tpdo(self):
         '''Add TPDO to the object dictionary'''
 
         # find next tpdo splot

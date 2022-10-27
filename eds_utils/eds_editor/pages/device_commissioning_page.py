@@ -6,8 +6,10 @@ from .page import Page
 
 
 class DeviceCommissioningPage(Page):
-    def __init__(self):
-        super().__init__()
+    '''A page to edit the device commissioning information of the dcf file.'''
+
+    def __init__(self, eds: EDS):
+        super().__init__(eds)
 
         frame = Gtk.Frame(label='Device Commissioning', margin_top=5, margin_bottom=5,
                           margin_start=5, margin_end=5)
@@ -98,13 +100,11 @@ class DeviceCommissioningPage(Page):
         button.connect('clicked', self.on_cancel_button_clicked)
         grid.attach(button, column=2, row=5, width=2, height=2)
 
-    def load_eds(self, eds: EDS):
-        self._eds = eds
-
-        # a set all the after loading the eds
+        # a hack to set all the values from the eds
         self.on_cancel_button_clicked(None)
 
-    def on_update_button_clicked(self, button):
+    def on_update_button_clicked(self, button: Gtk.Button):
+        '''Update button callback to save changes the device commissioning info.'''
 
         self._eds_changed = True
         device_comm = self._eds.device_commissioning
@@ -121,7 +121,8 @@ class DeviceCommissioningPage(Page):
         device_comm.canopen_manager = self._canopen_manager.get_state()
         device_comm.lss_serialnumber = int(self._lss_serial_num.get_value())
 
-    def on_cancel_button_clicked(self, button):
+    def on_cancel_button_clicked(self, button: Gtk.Button):
+        '''Cancel button callback to cancel / clear changes the device commissioning info.'''
 
         device_comm = self._eds.device_commissioning
         self._node_name.set_text(device_comm.node_name)

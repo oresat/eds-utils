@@ -1,11 +1,21 @@
 from gi.repository import Gtk
 
 from ...core import ObjectType, str2int
+from ...core.eds import EDS
 
 
 class AddObjectDialog(Gtk.Dialog):
+    '''Gtk Dialog to add a new object to the object dictionary.'''
 
-    def __init__(self, parent, eds):
+    def __init__(self, parent: Gtk.Window, eds: EDS):
+        '''
+        Parameter
+        ---------
+        parent: Gtk.Window
+            The parent window to attach to.
+        eds: EDS
+            The eds object to check if new object already exist. Dialog does not add new object.
+        '''
 
         super().__init__(title='Add new object', transient_for=parent)
 
@@ -60,7 +70,9 @@ class AddObjectDialog(Gtk.Dialog):
         # do this last
         self._obj_type.connect('notify', self.on_object_type_changed)
 
-    def on_object_type_changed(self, drop_down, flags):
+    def on_object_type_changed(self, drop_down: Gtk.DropDown, active: bool):
+        '''If the object_type changes, change editablity of the subindex entry as only variables
+        can have subindexes.'''
 
         object_type = list(ObjectType)[self._obj_type.get_selected()]
         if object_type == ObjectType.VAR:
@@ -70,7 +82,9 @@ class AddObjectDialog(Gtk.Dialog):
             self._subindex_entry.set_sensitive(False)
             self._subindex_entry.set_text('NA')
 
-    def on_add_button_clicked(self, button):
+    def on_add_button_clicked(self, button: Gtk.Button):
+        '''On the add button clicked, validate all the fields and display any errors or send the
+        response and close the dialog.'''
 
         errors = []
         index = None
@@ -118,7 +132,8 @@ class AddObjectDialog(Gtk.Dialog):
         self.response(1)
         self.destroy()
 
-    def on_cancel_button_clicked(self, button):
+    def on_cancel_button_clicked(self, button: Gtk.Button):
+        '''On the cancel button clicked, close the dialog.'''
 
         # reset to defaults
         self._obj_type.set_selected(0)
@@ -133,5 +148,17 @@ class AddObjectDialog(Gtk.Dialog):
         self.destroy()
 
     def get_response(self) -> (int, int, ObjectType):
+        '''
+        Get the custom response from the dialog.
+
+        Returns
+        -------
+        int
+            The index of the new object to add.
+        int
+            The subindex of the new object to add. Can be set to `None`.
+        ObjectType
+            The type of object to add the the index and optional subindex.
+        '''
 
         return self._new_index, self._new_subindex, self._new_object_type

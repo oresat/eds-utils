@@ -4,9 +4,11 @@ from .eds_notebook import EDSNotebook
 
 
 class AppWindow(Gtk.ApplicationWindow):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # the stack to allow multiple eds project to be open at the same time
         self.stack = Gtk.Stack.new()
         self.set_child(self.stack)
 
@@ -16,6 +18,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.header.set_title_widget(stack_switcher)
         self.set_titlebar(self.header)
 
+        # make file filter for dialogs
         f = Gtk.FileFilter()
         f.set_name('CANopen files')
         f.add_pattern('*.dcf')
@@ -59,31 +62,45 @@ class AppWindow(Gtk.ApplicationWindow):
         button.connect('clicked', self.on_click_save)
         self.header.pack_end(button)
 
-    def show_new_dialog(self, button):
+    def show_new_dialog(self, button: Gtk.Button):
+        '''When the new eds button is clicked, open the dialog to make a new eds project.'''
+
         print('new TODO')
 
-    def show_open_dialog(self, button):
+    def show_open_dialog(self, button: Gtk.Button):
+        '''When the open eds button is clicked, open the dialog to selected a new file to open.'''
+
         self.open_dialog.show()
 
     def open_eds(self, file_path: str):
+        '''Open a eds file and add it to the stack.'''
+
         eds_notebook = EDSNotebook(file_path, self)
         self.stack.add_titled(eds_notebook, None, eds_notebook.eds_file)
 
-    def open_response(self, dialog, response):
+    def open_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType):
+        '''Deal with the response to the open dialog.'''
+
         if response == Gtk.ResponseType.ACCEPT:
             file = dialog.get_file()
             file_path = file.get_path()
             self.open_eds(file_path)
 
-    def on_click_save(self, button):
+    def on_click_save(self, button: Gtk.Button):
+        '''When the save button is clicked, save the current eds project.'''
+
         eds_notebook = self.stack.get_visible_child()
         if eds_notebook:
             eds_notebook.save_eds()
 
-    def show_save_as_dialog(self, button):
+    def show_save_as_dialog(self, button: Gtk.Button):
+        '''When the save as button is clicked open the save as dialog.'''
+
         self.save_as_dialog.show()
 
-    def save_as_response(self, dialog, response):
+    def save_as_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType):
+        '''Deal with the response to the save as dialog.'''
+
         if response == Gtk.ResponseType.ACCEPT:
             eds_notebook = self.stack.get_visible_child()
             if eds_notebook:
@@ -91,7 +108,9 @@ class AppWindow(Gtk.ApplicationWindow):
                 file_path = file.get_path()
                 eds_notebook.save_eds(file_path)
 
-    def on_click_close(self, button):
+    def on_click_close(self, button: Gtk.Button):
+        '''When the close button is clicked, close the current eds project.'''
+
         child = self.stack.get_visible_child()
         self.stack.remove(child)
 

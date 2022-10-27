@@ -7,7 +7,7 @@ from ..objects import Variable, Array, Record
 from ..eds import EDS
 
 
-def write_eds(eds: EDS, file_path='', dcf=False) -> None:
+def write_eds(eds: EDS, file_path='', dcf=False):
     '''Save an eds/dcf file
 
     Parameters

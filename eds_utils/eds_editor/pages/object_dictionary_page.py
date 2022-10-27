@@ -12,10 +12,11 @@ from .page import Page
 
 
 class ObjectDictionaryPage(Page):
-    def __init__(self, parent_window: Gtk.Window):
-        super().__init__()
+    '''A page to edit the object dictionary of the eds / dcf file.'''
 
-        self._eds = None
+    def __init__(self, eds: EDS, parent_window: Gtk.Window):
+        super().__init__(eds)
+
         self._parent_window = parent_window
 
         self._selected_obj = None
@@ -196,7 +197,10 @@ class ObjectDictionaryPage(Page):
         button.connect('clicked', self.on_cancel_button_clicked)
         grid.attach(button, column=2, row=12, width=2, height=2)
 
-    def on_update_button_clicked(self, button):
+        self.reload_eds()
+
+    def on_update_button_clicked(self, button: Gtk.Button):
+        '''Update button callback to save changes the selected object.'''
 
         if self._selected_obj is None:
             return
@@ -215,11 +219,12 @@ class ObjectDictionaryPage(Page):
         storage_loc = self._obj_storage_loc.get_selected()
         self._selected_obj.storage_location = list(StorageLocation)[storage_loc]
 
-    def on_cancel_button_clicked(self, button):
+    def on_cancel_button_clicked(self, button: Gtk.Button):
+        '''Cancel button callback to cancel changes the selected object.'''
 
         self._load_selection()
 
-    def on_search_entry(self, entry) -> None:
+    def on_search_entry(self, entry):
         '''Callback on search filter entry for parameter names'''
 
         if self._tree_filter:
@@ -246,7 +251,7 @@ class ObjectDictionaryPage(Page):
 
         return True  # no filter (show all)
 
-    def on_expand_clicked(self, button) -> None:
+    def on_expand_clicked(self, button):
         '''Callback on expand/collapse all button'''
 
         if button.get_label() == 'Expand All':
@@ -257,6 +262,7 @@ class ObjectDictionaryPage(Page):
             button.set_label('Expand All')
 
     def _load_selection(self):
+        '''Load the select object info'''
 
         if self._selected_obj is None:
             return
@@ -284,13 +290,14 @@ class ObjectDictionaryPage(Page):
             else:  # array is empty, use dafault
                 self._obj_data_type.set_selected(0)
 
-    def on_tree_selection_changed(self, selection):
+    def on_tree_selection_changed(self, selection: Gtk.SelectionModel):
+        '''When value is selected in the treeview, change the current selected object.'''
         model, treeiter = selection.get_selected()
 
         if not treeiter:
-            return
+            return  # no values in treeview
 
-        # reset this
+        # reset these
         self._obj_data_type.set_sensitive(True)
         self._obj_storage_loc.set_sensitive(True)
         self._obj_default_value.set_sensitive(True)
@@ -341,8 +348,8 @@ class ObjectDictionaryPage(Page):
 
         self._load_selection()
 
-    def load_eds(self, eds: EDS):
-        self._eds = eds
+    def reload_eds(self):
+        '''Reload the eds in the treeview.'''
         self._indexes_store.clear()
 
         # fill tree view with object dictionary data
@@ -358,6 +365,20 @@ class ObjectDictionaryPage(Page):
                                                [subindex_str, subindex_section.parameter_name])
 
     def add_treeview_obj(self, index: int, subindex: int, name: str):
+        '''
+        Add a new object to the treeview
+
+        Parameters
+        ----------
+        index: int
+            The index of the new object.
+        subindex: int
+            The subindex of the new object. If not a subindex set to a negative number.
+        name: str
+            The name of the new object.
+        '''
+
+        self._eds_changed = True
         index_str = f'0x{index:X}'
 
         index_found = False
@@ -402,6 +423,18 @@ class ObjectDictionaryPage(Page):
             self._indexes_store.append(None, [index_str, name])
 
     def remove_treeview_obj(self, index: int, subindex: int):
+        '''
+        Remove an object from the treeview.
+
+        Parameters
+        ----------
+        index: int
+            The index of the object to remove.
+        subindex: int
+            The subindex of the object to remove.
+        '''
+
+        self._eds_changed = True
 
         for i in self._indexes_store:
             if index == str2int(i[0]):
@@ -416,6 +449,18 @@ class ObjectDictionaryPage(Page):
                     break  # stop index loop
 
     def update_obj(self, index: int, subindex: int, name: str):
+        '''
+        Update an object in the treeview.
+
+        Parameters
+        ----------
+        index: int
+            The index of the object to update.
+        subindex: int
+            The subindex of the object to update.
+        name: str
+            The name of the new object.
+        '''
 
         self._eds_changed = True
 
@@ -431,13 +476,15 @@ class ObjectDictionaryPage(Page):
                             break
                     break  # stop index loop
 
-    def add_treeview_object_on_click(self, button):
+    def add_treeview_object_on_click(self, button: Gtk.Button):
+        '''Callback for the add object to OD button. Opens the add object dialog.'''
 
         dialog = AddObjectDialog(self._parent_window, self._eds)
         dialog.connect('response', self.add_treeview_object_response)
         dialog.show()
 
-    def add_treeview_object_response(self, dialog: Gtk.Dialog, response: int) -> None:
+    def add_treeview_object_response(self, dialog: Gtk.Dialog, response: int):
+        '''Parses the response to the ad object dialog..'''
 
         self._eds_changed = True
 
@@ -466,7 +513,16 @@ class ObjectDictionaryPage(Page):
         if new_obj_type in [ObjectType.ARRAY, ObjectType.RECORD]:
             self.add_treeview_obj(new_index, 0, obj[0].parameter_name)
 
-    def check_selected(self):
+    def check_selected(self) -> list:
+        '''Check the select object is for move / copy / removal operations. If the object cannot be
+        moved / copied / removed an errors dialog will be displayed.
+
+
+        Returns
+        -------
+        list
+            The list of errors messages. Will be an empty list for no errors.
+        '''
 
         errors = []
 
@@ -483,7 +539,8 @@ class ObjectDictionaryPage(Page):
 
         return errors
 
-    def remove_treeview_object_on_click(self, button):
+    def remove_treeview_object_on_click(self, button: Gtk.Button):
+        '''Callback for the remove object to OD button.'''
 
         if self.check_selected():
             return  # invalid object to remove
@@ -502,14 +559,16 @@ class ObjectDictionaryPage(Page):
         # remove from treeview
         self.remove_treeview_obj(self._selected_index, self._selected_subindex)
 
-    def copy_object_on_click(self, button):
+    def copy_object_on_click(self, button: Gtk.Button):
+        '''Callback for the copy object to OD button. Opens the copy object dialog.'''
 
         dialog = CopyObjectDialog(self._parent_window, self._eds, self._selected_index,
                                   self._selected_subindex)
         dialog.connect('response', self.copy_treeview_object_response)
         dialog.show()
 
-    def copy_treeview_object_response(self, dialog: Gtk.Dialog, response: int) -> None:
+    def copy_treeview_object_response(self, dialog: Gtk.Dialog, response: int):
+        '''Parses the response to the copy object dialog..'''
 
         self._eds_changed = True
 
@@ -524,8 +583,8 @@ class ObjectDictionaryPage(Page):
             self._eds[new_index][new_subindex] = deepcopy(self._eds[self._selected_index])
         elif new_subindex is None and self._selected_subindex is not None:
             # copy a subindex to a new index
-            self._eds[new_index] = \
-                deepcopy(self._eds[self._selected_index][self._selected_subindex])
+            temp = deepcopy(self._eds[self._selected_index][self._selected_subindex])
+            self._eds[new_index] = temp
         else:
             # copy a subindex to a new subindex
             temp = deepcopy(self._eds[self._selected_index][self._selected_subindex])
@@ -535,7 +594,8 @@ class ObjectDictionaryPage(Page):
         name = self._selected_obj.parameter_name
         self.add_treeview_obj(new_index, new_subindex, name)
 
-    def move_object_on_click(self, button):
+    def move_object_on_click(self, button: Gtk.Button):
+        '''Callback for the move object to OD button. Opens the move object dialog.'''
 
         if self.check_selected():
             return  # invalid object to move
@@ -545,7 +605,8 @@ class ObjectDictionaryPage(Page):
         dialog.connect('response', self.move_treeview_object_response)
         dialog.show()
 
-    def move_treeview_object_response(self, dialog: Gtk.Dialog, response: int) -> None:
+    def move_treeview_object_response(self, dialog: Gtk.Dialog, response: int):
+        '''Parses the response to the move object dialog..'''
 
         self._eds_changed = True
 

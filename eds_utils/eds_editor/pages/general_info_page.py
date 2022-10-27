@@ -7,10 +7,13 @@ from .page import Page
 
 
 class GeneralInfoPage(Page):
-    DT_FORMAT = '%Y-%m-%d %I:%M%p'
+    '''A page to edit the general information of the eds / dcf file.'''
 
-    def __init__(self):
-        super().__init__()
+    DT_FORMAT = '%Y-%m-%d %I:%M%p'
+    '''The eds entry box datetime format'''
+
+    def __init__(self, eds: EDS):
+        super().__init__(eds)
 
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         box.set_halign(Gtk.Align.START)
@@ -231,15 +234,7 @@ class GeneralInfoPage(Page):
         button.connect('clicked', self.on_cancel_button_clicked)
         box2.append(button)
 
-    def on_now_button_clicked(self, button):
-        '''Set the modified datetime value in the gui to current time'''
-
-        dt_str = datetime.now().strftime(self.DT_FORMAT)
-        self._modification_datetime.set_text(dt_str)
-
-    def load_eds(self, eds: EDS) -> None:
-        self._eds = eds
-
+        # fillout file info
         file_info = self._eds.file_info
         self._file_name.set_text(file_info.file_name)
         self._file_version.set_value(file_info.file_version)
@@ -252,6 +247,7 @@ class GeneralInfoPage(Page):
         self._modification_datetime.set_text(dt_str)
         self._modified_by.set_text(file_info.modified_by)
 
+        # fillout device info
         device_info = self._eds.device_info
         self._vendor_name.set_text(device_info.vender_name)
         self._vendor_number.set_value(device_info.vender_number)
@@ -273,10 +269,13 @@ class GeneralInfoPage(Page):
         self._group_messaging.set_state(device_info.group_messaging)
         self._lss_support.set_state(device_info.lss_supported)
 
-    def remove_eds(self):
-        self._eds = None
+    def on_now_button_clicked(self, button: Gtk.Button):
+        '''Set the modified datetime value in the gui to current time'''
 
-    def on_update_button_clicked(self, button):
+        dt_str = datetime.now().strftime(self.DT_FORMAT)
+        self._modification_datetime.set_text(dt_str)
+
+    def on_update_button_clicked(self, button: Gtk.Button):
         '''Save the values from the gui into the data structure'''
 
         if self._eds is None:
@@ -321,7 +320,7 @@ class GeneralInfoPage(Page):
         self._eds.file_info = file_info
         self._eds.device_info = device_info
 
-    def on_cancel_button_clicked(self, button):
+    def on_cancel_button_clicked(self, button: Gtk.Button):
         '''Reset the values from the gui to the values from the data structure'''
 
         self._load_eds(self._eds)

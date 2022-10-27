@@ -7,7 +7,7 @@ from ..objects import Variable, Array, Record
 from ..eds import EDS
 
 
-def write_md(eds: EDS, file_path='', dcf=False) -> None:
+def write_md(eds: EDS, file_path='', dcf=False):
     '''Save an eds/dcf as a markdown file
 
     Parameters
