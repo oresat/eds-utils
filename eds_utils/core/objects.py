@@ -1,30 +1,25 @@
 '''All the object class for the object dictionary'''
 
+from dataclasses import dataclass
+
 from . import DataType, AccessType, ObjectType, StorageLocation
 
 
+@dataclass
 class Variable:
     '''Holds EDS variable data'''
 
-    def __init__(self, parameter_name='New Variable'):
-        '''
-        Parameters
-        ----------
-        parameter_name: str
-            Name of the new variable.
-        '''
-
-        self.comments = ''
-        self.parameter_name = parameter_name
-        self.denotation = ''
-        self.data_type = DataType.UNSIGNED32
-        self.low_limit = ''
-        self.high_limit = ''
-        self.default_value = ''
-        self.access_type = AccessType.RW
-        self.pdo_mapping = False
-        self.object_type = ObjectType.VAR
-        self.storage_location = StorageLocation.RAM  # for CANopenNode support
+    comments: str = ''
+    parameter_name: str = 'New Variable'
+    denotation: str = ''
+    data_type: DataType = DataType.UNSIGNED32
+    low_limit: str = ''
+    high_limit: str = ''
+    default_value: str = ''
+    access_type: AccessType = AccessType.RW
+    pdo_mapping: bool = False
+    object_type: ObjectType = ObjectType.VAR
+    storage_location: StorageLocation = StorageLocation.RAM  # for CANopenNode support
 
 
 class Record:
@@ -41,16 +36,16 @@ class Record:
         self.parameter_name = parameter_name
         self.denotation = ''
         self.comments = ''
-        self._data = {}
         self.object_type = ObjectType.RECORD
         self._storage_location = StorageLocation.RAM  # for CANopenNode support
-
-        var = Variable()
-        var.parameter_name = 'Highest sub-index supported'
-        var.access_type = AccessType.CONST
-        var.data_type = DataType.UNSIGNED8
-        var.default_value = '0x00'
-        self._data[0] = var
+        self._data = {
+            0: Variable(
+                parameter_name='Highest sub-index supported',
+                access_type=AccessType.CONST,
+                data_type=DataType.UNSIGNED8,
+                default_value='0x00'
+            )
+        }
 
     def __len__(self) -> int:
         return len(self._data)
@@ -109,17 +104,19 @@ class Record:
 class Array(Record):
     '''Holds EDS array data'''
 
-    def __init__(self, parameter_name='New Array'):
+    def __init__(self, parameter_name='New Array', data_type: DataType = None):
         '''
         Parameters
         ----------
         parameter_name: str
             Name of the new array.
+        data_type: DataType
+            The data type for the array. Can None if not determind yet.
         '''
 
         super().__init__(parameter_name)
         self.object_type = ObjectType.ARRAY
-        self._data_type = None
+        self._data_type = data_type
 
     def __setitem__(self, subindex: int, variable: Variable):
         '''Add a subindex to the array'''
@@ -133,6 +130,10 @@ class Array(Record):
             raise ValueError('Variable\'s data type does not match array\'s data type')
         else:
             self._data[subindex] = variable
+
+            # set the data_type if not set
+            if not self._data_type:
+                self._data_type = variable.data_type
 
             # update record size subindex
             self._data[0].default_value = f'0x{len(self._data) - 1:02X}'

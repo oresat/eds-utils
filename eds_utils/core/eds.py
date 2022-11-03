@@ -1,6 +1,6 @@
 from datetime import datetime
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, List
 
 from . import DataType
 from .objects import Variable, Record
@@ -96,17 +96,16 @@ class EDS:
     def insert(self, index: int, subindex: int, item):
         '''Insert a object into the object dictionary'''
 
-        if index in self._data:
-            raise ValueError(f'index 0x{index:X} already exist')
-
         if subindex is None:  # use only index
+            if index in self._data:
+                raise ValueError(f'index 0x{index:X} already exist')
             self._data[index] = item
         elif subindex in self._data:  # use index and subindex
             raise ValueError(f'subindex 0x{subindex:X} already exist for index 0x{index:X}')
         elif not isinstance(item, Variable):
             raise ValueError('cannot insert non-Variable into subindex')
         else:
-            self._data[index].insert(subindex, item)
+            self._data[index][subindex] = item
 
     def remove(self, index: int, subindex: int = None):
         '''Remove a object from the object dictionary'''
@@ -144,7 +143,7 @@ class EDS:
         comm_rec[1] = Variable(parameter_name='COB-ID used by RPDO', default_value=cob_id)
         comm_rec[2] = Variable(parameter_name='Transmission type')
         comm_rec[3] = Variable(parameter_name='Inhibit time')
-        comm_rec[4] = Variable(parameter_name='Compatibility entry', data_type=DataType.UNSIGNED8)
+        # subindex 4 is reserved in CiA 301
         comm_rec[5] = Variable(parameter_name='Event timer')
         comm_rec[6] = Variable(parameter_name='SYNC start value', data_type=DataType.UNSIGNED8)
         self._data[self.RPDO_COMM_START + next_rpdo] = comm_rec
@@ -183,7 +182,7 @@ class EDS:
         comm_rec[1] = Variable(parameter_name='COB-ID used by TPDO', default_value=cob_id)
         comm_rec[2] = Variable(parameter_name='Transmission type')
         comm_rec[3] = Variable(parameter_name='Inhibit time')
-        # 4 is reserved in CiA 301 for TPDOs
+        # subindex 4 is reserved in CiA 301
         comm_rec[5] = Variable(parameter_name='Event timer')
         comm_rec[6] = Variable(parameter_name='SYNC start value', data_type=DataType.UNSIGNED8)
         self._data[self.TPDO_COMM_START + next_tpdo] = comm_rec
@@ -196,7 +195,7 @@ class EDS:
 
     @property
     def rpdos(self) -> int:
-        '''Get the number of RPDOs'''
+        '''int: The number of RPDOs'''
 
         count = 0
         for i in range(self.RPDO_COMM_START, self.RPDO_PARA_START):
@@ -207,7 +206,7 @@ class EDS:
 
     @property
     def tpdos(self) -> int:
-        '''Get the number of TPDOs'''
+        '''int: The number of TPDOs'''
 
         count = 0
         for i in range(self.TPDO_COMM_START, self.TPDO_PARA_START):
@@ -217,14 +216,14 @@ class EDS:
         return count
 
     @property
-    def indexes(self) -> list:
-        '''Get the list of indexes in OD'''
+    def indexes(self) -> List[int]:
+        '''The list of indexes in the OD'''
 
         return sorted(self._data.keys())
 
     @property
-    def mandatory_objects(self) -> list:
-        '''Get the list of mandatory objects in OD'''
+    def mandatory_objects(self) -> List[int]:
+        '''The list of mandatory objects indexes in the OD'''
 
         objects = []
 
@@ -236,7 +235,7 @@ class EDS:
 
     @property
     def optional_objects(self) -> list:
-        '''Get the list of optional objects in OD'''
+        '''The list of optional objects indexes in the OD'''
 
         objects = []
 
@@ -248,8 +247,8 @@ class EDS:
         return objects
 
     @property
-    def manufacturer_objects(self) -> list:
-        '''Get the list of manufacturer objects in OD'''
+    def manufacturer_objects(self) -> List[int]:
+        '''The list of manufacturer objects indexes in the OD'''
 
         objects = []
 
