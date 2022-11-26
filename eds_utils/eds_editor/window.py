@@ -1,6 +1,9 @@
+import os
+
 from gi.repository import Gtk
 
 from .eds_notebook import EDSNotebook
+from .dialogs.open_tmp_dialog import OpenTmpDialog
 
 
 class AppWindow(Gtk.ApplicationWindow):
@@ -72,11 +75,21 @@ class AppWindow(Gtk.ApplicationWindow):
 
         self.open_dialog.show()
 
-    def open_eds(self, file_path: str):
-        '''Open a eds file and add it to the stack.'''
+    def _open_eds(self, file_path: str):
+        '''Open an eds file and add it to the stack.'''
 
         eds_notebook = EDSNotebook(file_path, self)
         self.stack.add_titled(eds_notebook, None, eds_notebook.eds_file)
+
+    def open_eds(self, file_path: str):
+        '''Open an eds file. Will check for a tempory.'''
+
+        if os.path.exists(file_path + '.tmp'):
+            dialog = OpenTmpDialog(self, file_path)
+            dialog.connect('response', self.open_tmp_response)
+            dialog.show()
+        else:
+            self._open_eds(file_path)
 
     def open_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType):
         '''Deal with the response to the open dialog.'''
@@ -84,7 +97,16 @@ class AppWindow(Gtk.ApplicationWindow):
         if response == Gtk.ResponseType.ACCEPT:
             file = dialog.get_file()
             file_path = file.get_path()
+
             self.open_eds(file_path)
+
+    def open_tmp_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType):
+        '''Deal with the response to the open tmp dialog.'''
+
+        if dialog.get_response():
+            self._open_eds(dialog.file_path + '.tmp')
+        else:
+            self._open_eds(dialog.file_path)
 
     def on_click_save(self, button: Gtk.Button):
         '''When the save button is clicked, save the current eds project.'''
