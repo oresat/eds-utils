@@ -9,6 +9,7 @@ from .dialogs.errors_dialog import ErrorsDialog
 from .pages.general_info_page import GeneralInfoPage
 from .pages.object_dictionary_page import ObjectDictionaryPage
 from .pages.device_commissioning_page import DeviceCommissioningPage
+from .pages.pdo_page import PDOPage
 
 
 class EDSNotebook(Gtk.Notebook):
@@ -39,10 +40,14 @@ class EDSNotebook(Gtk.Notebook):
 
         self.gi_page = GeneralInfoPage(self.eds)
         self.od_page = ObjectDictionaryPage(self.eds, self.parent_window)
+        self.rpdo_page = PDOPage(self.eds, 'RPDO')
+        self.tpdo_page = PDOPage(self.eds, 'TPDO')
         self.dc_page = DeviceCommissioningPage(self.eds)
 
         self.append_page(self.gi_page, Gtk.Label.new('General Info'))
         self.append_page(self.od_page, Gtk.Label.new('Object Dictionary'))
+        self.append_page(self.rpdo_page, Gtk.Label.new('RPDOs'))
+        self.append_page(self.tpdo_page, Gtk.Label.new('TPDOs'))
         self.append_page(self.dc_page, Gtk.Label.new('Device Commissioning'))
 
         # save a tempory eds file at an interval

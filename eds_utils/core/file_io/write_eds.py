@@ -2,7 +2,7 @@
 
 from os.path import basename, splitext
 
-from .. import BAUD_RATE, ObjectType
+from .. import BAUD_RATE, ObjectType, AccessType
 from ..objects import Variable, Array, Record
 from ..eds import EDS
 
@@ -160,7 +160,10 @@ def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False,
     if canopennode:  # optional, for CANopenNode suppport
         lines.append(f';StorageLocation={variable.storage_location.name}')
     lines.append(f'DataType={variable.data_type.to_str()}')
-    lines.append(f'AccessType={variable.access_type.to_str()}')
+    if subindex == 0:
+        lines.append(f'AccessType={AccessType.CONST.to_str()}')
+    else:
+        lines.append(f'AccessType={variable.access_type.to_str()}')
     if variable.default_value:  # optional
         lines.append(f'DefaultValue={variable.default_value}')
     if variable.pdo_mapping:  # optional

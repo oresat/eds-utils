@@ -21,6 +21,9 @@ class Variable:
     object_type: ObjectType = ObjectType.VAR
     storage_location: StorageLocation = StorageLocation.RAM  # for CANopenNode support
 
+    def __hash__(self):
+        return hash((self.parameter_name, self.data_type, self.comments))
+
 
 class Record:
     '''Holds EDS record data'''

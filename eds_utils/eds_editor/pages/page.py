@@ -21,6 +21,7 @@ class Page(Gtk.ScrolledWindow):
     @property
     def eds_changed(self) -> bool:
         '''bool: a flag to see if eds info has changed.'''
+
         return self._eds_changed
 
     def eds_changed_reset(self):
