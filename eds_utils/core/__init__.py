@@ -97,3 +97,25 @@ class StorageLocation(Enum):
     ROM = auto()
     PERSIST_COMM = auto()
     PERSIST_MFR = auto()
+
+
+RPDO_TRANSMISSION_TYPES = []
+for i in range(0, 0xF1):
+    RPDO_TRANSMISSION_TYPES.append(f'Synchronous (0x{i:02X})')
+for i in range(0xF1, 0xFE):
+    RPDO_TRANSMISSION_TYPES.append(f'Reserved (0x{i:X})')
+RPDO_TRANSMISSION_TYPES.append('Event-Driven (Manufacture)')
+RPDO_TRANSMISSION_TYPES.append('Event-Driven (Device / App)')
+'''All valid RPDO transmission types'''
+
+TPDO_TRANSMISSION_TYPES = ['Synchronous (Acycle)']
+TPDO_TRANSMISSION_TYPES.append('Synchronous every SYNC')
+for i in range(2, 0xF1):
+    TPDO_TRANSMISSION_TYPES.append(f'Synchronous every {i} SYNC')
+for i in range(0xF1, 0xFC):
+    TPDO_TRANSMISSION_TYPES.append(f'Reserved (0x{i:X})')
+TPDO_TRANSMISSION_TYPES.append('RTC-only (Synchronous)')
+TPDO_TRANSMISSION_TYPES.append('RTC-only (Event-Driven)')
+TPDO_TRANSMISSION_TYPES.append('Event-Driven (Manufacture)')
+TPDO_TRANSMISSION_TYPES.append('Event-Driven (Device / App)')
+'''All valid TPDO transmission types'''
