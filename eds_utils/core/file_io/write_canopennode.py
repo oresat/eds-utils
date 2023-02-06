@@ -1,9 +1,12 @@
 '''Everything to write an eds/dcf as CANopenNode OD.[c/h] files'''
 
-from . import INDENT4, INDENT8, INDENT16
+from . import INDENT4, INDENT8, INDENT12
 from .. import ObjectType, DataType, AccessType
 from ..eds import EDS
 from ..objects import Variable
+
+_SKIP_INDEXES = [0x1F81, 0x1F82]
+'''CANopenNode skips the data for theses for some reason'''
 
 DATA_TYPE_LENGTH = {
     DataType.BOOLEAN: 1,
@@ -35,12 +38,11 @@ DATA_TYPE_LENGTH = {
 
 DATA_TYPE_STR = [
     DataType.VISIBLE_STRING,
-    DataType.OCTET_STRING,
     DataType.UNICODE_STRING,
 ]
 
 DATA_TYPE_C_TYPES = {
-    DataType.BOOLEAN: 'bool',
+    DataType.BOOLEAN: 'bool_t',
     DataType.INTEGER8: 'int8_t',
     DataType.INTEGER16: 'int16_t',
     DataType.INTEGER32: 'int32_t',
@@ -145,8 +147,12 @@ def attr_lines(eds: EDS, index: int) -> list:
             line += f'"{default_value}",'
         elif obj.data_type == DataType.OCTET_STRING:
             line += '{'
-            for i in range(0, len(obj.default_value), 2):
-                line += f'0x{obj.default_value[i]}{obj.default_value[i+1]}, '
+            value = obj.default_value
+            length = len(value)
+            if length < 16:
+                value = '0' * (16 - length) + value
+            for i in range(0, len(value), 2):
+                line += f'0x{value[i]}{value[i+1]}, '
             line = line[:-2]
             line += '},'
         else:
@@ -158,19 +164,42 @@ def attr_lines(eds: EDS, index: int) -> list:
         line = f'{INDENT4}.x{index:X}_{name} = ' + '{'
         for i in obj.subindexes[1:]:
             default_value = remove_node_id(obj[i].default_value)
-            line += f'{default_value}, '
-        line = line[:-2]  # remove trailing ','
+            if obj[i].data_type == DataType.VISIBLE_STRING:
+                line += f'"{default_value}", '
+            elif obj[i].data_type == DataType.OCTET_STRING:
+                length = len(default_value)
+                if length < 16:
+                    value = '0' * (16 - length) + default_value
+                line += '{'
+                for i in range(0, len(value), 2):
+                    line += f'0x{value[i]}{value[i+1]}, '
+                line = line[:-2]  # remove trailing ', '
+                line += '}, '
+            else:
+                line += f'{default_value}, '
+            # line += f'{default_value}, '
+        line = line[:-2]  # remove trailing ', '
         line += '},'
-        lines.append(line)
+        if index not in _SKIP_INDEXES:
+            lines.append(line)
     else:
         lines.append(f'{INDENT4}.x{index:X}_{camel_case(obj.parameter_name)} = ' + '{')
         for i in obj.subindexes:
             name = camel_case(obj[i].parameter_name)
             default_value = remove_node_id(obj[i].default_value)
-            if isinstance(default_value, list):
-                print(default_value)
-                exit()
-            lines.append(f'{INDENT8}.{name} = {default_value},')
+            if obj[i].data_type == DataType.VISIBLE_STRING:
+                lines.append(f'{INDENT8}.{name} = "{default_value}",')
+            elif obj[i].data_type == DataType.OCTET_STRING:
+                value = obj[i].default_value
+                length = len(value)
+                if length < 16:
+                    value = '0' * (16 - length) + value
+                for i in range(0, len(value), 2):
+                    line += f'0x{value[i]}{value[i+1]}, '
+                line = line[:-2]  # remove trailing ', '
+                lines.append(line)
+            else:
+                lines.append(f'{INDENT8}.{name} = {default_value},')
         lines.append(INDENT4 + '},')
 
     return lines
@@ -238,7 +267,12 @@ def obj_lines(eds: EDS, index) -> list:
     elif obj.object_type == ObjectType.ARRAY:
         st_loc = obj.storage_location
         lines.append(f'{INDENT8}.dataOrig0 = &OD_{st_loc}.x{index:X}_{name}_sub0,')
-        lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
+        if index in _SKIP_INDEXES:
+            lines.append(f'{INDENT8}.dataOrig = NULL,')
+        elif obj.data_type == DataType.OCTET_STRING:
+            lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0][0],')
+        else:
+            lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
         lines.append(f'{INDENT8}.attribute0 = ODA_SDO_R,')
         lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj[1])},')
         length = _var_data_type_len(obj[1])
@@ -250,10 +284,10 @@ def obj_lines(eds: EDS, index) -> list:
             st_loc = obj.storage_location
             name_sub = camel_case(obj[i].parameter_name)
             lines.append(INDENT8 + '{')
-            lines.append(f'{INDENT16}.dataOrig = &OD_{st_loc}.x{index:X}_{name}.{name_sub},')
-            lines.append(f'{INDENT16}.subIndex = {i},')
-            lines.append(f'{INDENT16}.attribute = {_var_attr_flags(obj[i])},')
-            lines.append(f'{INDENT16}.dataLength = {_var_data_type_len(obj[i])}')
+            lines.append(f'{INDENT12}.dataOrig = &OD_{st_loc}.x{index:X}_{name}.{name_sub},')
+            lines.append(f'{INDENT12}.subIndex = {i},')
+            lines.append(f'{INDENT12}.attribute = {_var_attr_flags(obj[i])},')
+            lines.append(f'{INDENT12}.dataLength = {_var_data_type_len(obj[i])}')
             lines.append(INDENT8 + '},')
     lines.append(INDENT4 + '},')
 
@@ -370,13 +404,25 @@ def _canopennode_h_lines(eds: EDS, index: int) -> list:
         c_name = DATA_TYPE_C_TYPES[obj.data_type]
         length = f'OD_CNT_ARR_{index:X}'
         lines.append(f'{INDENT4}uint8_t x{index:X}_{name}_sub0;')
-        lines.append(f'{INDENT4}{c_name} x{index:X}_{name}[{length}];')
+        if index in _SKIP_INDEXES:
+            pass
+        elif obj.data_type == DataType.OCTET_STRING:
+            lines.append(f'{INDENT4}{c_name} x{index:X}_{name}[{length}][32];')
+        else:
+            lines.append(f'{INDENT4}{c_name} x{index:X}_{name}[{length}];')
     else:
         lines.append(INDENT4 + 'struct {')
         for i in obj.subindexes:
             c_name = DATA_TYPE_C_TYPES[obj[i].data_type]
             sub_name = camel_case(obj[i].parameter_name)
-            lines.append(f'{INDENT8}{c_name} {sub_name};')
+            if obj[i].data_type == DataType.VISIBLE_STRING:
+                length = len(obj[i].default_value) + 1  # add 1 for '\0'
+                lines.append(f'{INDENT8}{c_name} {sub_name}[{length}];')
+            elif obj[i].data_type == DataType.OCTET_STRING:
+                length = len(obj[i].default_value) + 1  # add 1 for '\0'
+                lines.append(f'{INDENT4}{c_name} x{index:X}_{name}[{length}][32];')
+            else:
+                lines.append(f'{INDENT8}{c_name} {sub_name};')
         lines.append(INDENT4 + '}' + f' x{index:X}_{name};')
 
     return lines
@@ -414,6 +460,7 @@ def write_canopennode_h(eds: EDS, dir_path=''):
     lines.append('#define OD_CNT_HB_CONS 1')
     lines.append('#define OD_CNT_HB_PROD 1')
     lines.append('#define OD_CNT_SDO_SRV 1')
+    lines.append('#define OD_CNT_SDO_CLI 1')
     lines.append(f'#define OD_CNT_RPDO {eds.rpdos}')
     lines.append(f'#define OD_CNT_TPDO {eds.tpdos}')
     lines.append('')
@@ -439,6 +486,12 @@ def write_canopennode_h(eds: EDS, dir_path=''):
         lines.append('#endif')
         lines.append(f'extern OD_ATTR_{sl} OD_{sl}_t OD_{sl};')
         lines.append('')
+
+    lines.append('#ifndef OD_ATTR_OD')
+    lines.append('#define OD_ATTR_OD')
+    lines.append('#endif')
+    lines.append('extern OD_ATTR_OD OD_t *OD;')
+    lines.append('')
 
     for i in eds.indexes:
         lines.append(f'#define OD_ENTRY_H{i:X} &OD->list[{eds.indexes.index(i)}]')
