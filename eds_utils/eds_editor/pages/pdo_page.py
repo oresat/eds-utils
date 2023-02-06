@@ -36,27 +36,6 @@ def pdo_mapping_fields(value: str) -> (int, int, int):
 class PDOPage(Page):
     '''A page to edit the RPDOs and/or TPDOs of the eds / dcf file.'''
 
-    def __init__(self, eds: EDS, parent_window: Gtk.Window, pdo: str):
-        super().__init__(eds)
-
-        self._parent_window = parent_window
-
-        if pdo.upper() == 'RPDO':
-            self._pdo = 'RPDO'
-        elif pdo.upper() == 'TPDO':
-            self._pdo = 'TPDO'
-        else:
-            raise ValueError('pdo must be "RPDO" or "TPDO"')
-
-        self._grid = ParaGrid(eds, parent_window, pdo)
-        self.set_child(self._grid)
-
-    def refresh(self):
-        self._grid.refresh()
-
-
-class ParaGrid(Gtk.Frame):
-
     # colum indexes and widths
     _NAME_I = 0
     _NAME_W = 4
@@ -84,9 +63,8 @@ class ParaGrid(Gtk.Frame):
     _REMOVE_I = _ADD_I + _ADD_W
     _REMOVE_W = 2
 
-    def __init__(self, eds: EDS, parent_window, pdo: str):
-        super().__init__(label=f'{pdo}', margin_top=5, margin_bottom=5, margin_start=5,
-                         margin_end=5)
+    def __init__(self, eds: EDS, parent_window: Gtk.Window, pdo: str):
+        super().__init__(eds)
 
         self._parent_window = parent_window
         self._eds = eds
@@ -98,8 +76,12 @@ class ParaGrid(Gtk.Frame):
         else:
             raise ValueError('pdo must be "RPDO" or "TPDO"')
 
+        frame = Gtk.Frame(label=f'{pdo}', margin_top=5, margin_bottom=5, margin_start=5,
+                          margin_end=5)
+        self.set_child(frame)
+
         scrolled_window = Gtk.ScrolledWindow()
-        self.set_child(scrolled_window)
+        frame.set_child(scrolled_window)
 
         self._grid = Gtk.Grid(column_spacing=5, row_spacing=5, column_homogeneous=True,
                               row_homogeneous=True, margin_start=5, margin_end=5)
