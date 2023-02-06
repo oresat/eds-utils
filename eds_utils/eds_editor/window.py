@@ -3,7 +3,7 @@ import os
 from gi.repository import Gtk
 
 from .eds_notebook import EDSNotebook
-from .dialogs.open_tmp_dialog import OpenTmpDialog
+from .dialogs.open_tmp_dialog import OpenTmpDialog, TmpResponse
 
 
 class AppWindow(Gtk.ApplicationWindow):
@@ -103,9 +103,13 @@ class AppWindow(Gtk.ApplicationWindow):
     def open_tmp_response(self, dialog: Gtk.Dialog, response: Gtk.ResponseType):
         '''Deal with the response to the open tmp dialog.'''
 
-        if dialog.get_response():
+        response = dialog.get_response()
+        if response == TmpResponse.USE_TMP:
             self._open_eds(dialog.file_path + '.tmp')
+        elif response == TmpResponse.DONT_USE_TMP:
+            self._open_eds(dialog.file_path)
         else:
+            os.remove(dialog.file_path + '.tmp')
             self._open_eds(dialog.file_path)
 
     def on_click_save(self, button: Gtk.Button):
