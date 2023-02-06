@@ -116,14 +116,6 @@ class AccessType(Enum):
         return self.name.lower()
 
 
-class StorageLocation(Enum):
-    '''for CANopenNode support'''
-    RAM = auto()
-    ROM = auto()
-    PERSIST_COMM = auto()
-    PERSIST_MFR = auto()
-
-
 RPDO_TRANSMISSION_TYPES = []
 for i in range(0, 0xF1):
     RPDO_TRANSMISSION_TYPES.append(f'Synchronous (0x{i:02X})')

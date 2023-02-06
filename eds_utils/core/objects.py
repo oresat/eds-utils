@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from . import DataType, AccessType, ObjectType, StorageLocation
+from . import DataType, AccessType, ObjectType
 
 
 @dataclass
@@ -19,7 +19,7 @@ class Variable:
     access_type: AccessType = AccessType.RW
     pdo_mapping: bool = False
     object_type: ObjectType = ObjectType.VAR
-    storage_location: StorageLocation = StorageLocation.RAM  # for CANopenNode support
+    storage_location: str = ''  # for CANopenNode support
 
     def __hash__(self):
         return hash((self.parameter_name, self.data_type, self.comments))
@@ -40,7 +40,7 @@ class Record:
         self.denotation = ''
         self.comments = ''
         self.object_type = ObjectType.RECORD
-        self._storage_location = StorageLocation.RAM  # for CANopenNode support
+        self._storage_location = ''  # for CANopenNode support
         self._data = {
             0: Variable(
                 parameter_name='Highest sub-index supported',
@@ -90,13 +90,13 @@ class Record:
         return sorted(self._data.keys())
 
     @property
-    def storage_location(self) -> StorageLocation:
+    def storage_location(self) -> str:
         '''The storage location of object'''
 
         return self._storage_location
 
     @storage_location.setter
-    def storage_location(self, storage_location: StorageLocation):
+    def storage_location(self, storage_location: str):
 
         for i in self._data:
             self._data[i].storage_location = storage_location

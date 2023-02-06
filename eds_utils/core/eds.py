@@ -77,6 +77,7 @@ class EDS:
         self.device_commissioning = DeviceCommissioning()
         self.comment = ''
         self.canopennode = False  # flag for canopennode eds/dcf
+        self._storage_locations = []
 
     def __len__(self):
         return len(self._data)
@@ -257,3 +258,14 @@ class EDS:
                 objects.append(i)
 
         return objects
+
+    @property
+    def storage_locations(self) -> List[str]:
+        '''The list of storage locations for CANopenNode support.'''
+
+        return self._storage_locations
+
+    def add_storage_location(self, storage_location: str):
+
+        if storage_location not in self._storage_locations:
+            self._storage_locations.append(storage_location)

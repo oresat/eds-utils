@@ -149,7 +149,7 @@ def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False,
         lines.append(f'Denotation|{variable.denotation}')
     lines.append(f'Object Type|{ObjectType.VAR.name}')
     if canopennode:  # optional, for CANopenNode suppport
-        lines.append(f'Storage Location|{variable.storage_location.name}')
+        lines.append(f'Storage Location|{variable.storage_location}')
     lines.append(f'Data Type|{variable.data_type.name}')
     lines.append(f'Access Type|{variable.access_type.to_str()}')
     if variable.default_value:  # optional

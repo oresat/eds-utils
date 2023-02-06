@@ -158,7 +158,7 @@ def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False,
         lines.append(f'Denotation={variable.denotation}')
     lines.append(f'ObjectType={ObjectType.VAR.to_str()}')
     if canopennode:  # optional, for CANopenNode suppport
-        lines.append(f';StorageLocation={variable.storage_location.name}')
+        lines.append(f';StorageLocation={variable.storage_location}')
     lines.append(f'DataType={variable.data_type.to_str()}')
     if subindex == 0:
         lines.append(f'AccessType={AccessType.CONST.to_str()}')
@@ -191,7 +191,7 @@ def _array_lines(array: Array, index: int, dcf=False, canopennode=False) -> list
         lines.append(f'Denotation={array.denotation}')
     lines.append(f'ObjectType={ObjectType.ARRAY.to_str()}')
     if canopennode:  # optional, for CANopenNode suppport
-        lines.append(f';StorageLocation={array.storage_location.name}')
+        lines.append(f';StorageLocation={array.storage_location}')
     lines.append(f'SubNumber={len(array)}')
     lines.append('')
 
@@ -215,7 +215,7 @@ def _record_lines(record: Record, index: int, dcf=False, canopennode=False) -> l
         lines.append(f'Denotation={record.denotation}')
     lines.append(f'ObjectType={ObjectType.RECORD.to_str()}')
     if canopennode:  # optional, for CANopenNode suppport
-        lines.append(f';StorageLocation={record.storage_location.name}')
+        lines.append(f';StorageLocation={record.storage_location}')
     lines.append(f'SubNumber={len(record)}')
     lines.append('')
 

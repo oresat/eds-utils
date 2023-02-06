@@ -2,7 +2,7 @@ from copy import deepcopy
 
 from gi.repository import Gtk
 
-from ...core import DataType, ObjectType, AccessType, StorageLocation, str2int
+from ...core import DataType, ObjectType, AccessType, str2int
 from ...core.eds import EDS
 from ...core.objects import Variable, Array, Record
 from ..dialogs.errors_dialog import ErrorsDialog
@@ -179,9 +179,10 @@ class ObjectDictionaryPage(Page):
         label = Gtk.Label.new('Storage Location (CANopenNode):')
         label.set_halign(Gtk.Align.START)
         self._obj_storage_loc = Gtk.DropDown()
-        storage_loc_list = Gtk.StringList.new(strings=[i.name for i in StorageLocation])
-        self._obj_storage_loc.set_model(storage_loc_list)
-        self._obj_storage_loc.set_selected(0)
+        if eds.storage_locations:
+            storage_loc_list = Gtk.StringList.new(strings=eds.storage_locations)
+            self._obj_storage_loc.set_model(storage_loc_list)
+            self._obj_storage_loc.set_selected(0)
         grid.attach(label, column=0, row=11, width=1, height=1)
         grid.attach(self._obj_storage_loc, column=1, row=11, width=1, height=1)
 
@@ -217,7 +218,7 @@ class ObjectDictionaryPage(Page):
         self._selected_obj.default_value = self._obj_default_value.get_text()
         self._selected_obj.pdo_mapping = self._obj_pdo_mapping.get_state()
         storage_loc = self._obj_storage_loc.get_selected()
-        self._selected_obj.storage_location = list(StorageLocation)[storage_loc]
+        self._selected_obj.storage_location = self._eds.storage_locations[storage_loc]
 
     def on_cancel_button_clicked(self, button: Gtk.Button):
         '''Cancel button callback to cancel changes the selected object.'''
@@ -273,7 +274,7 @@ class ObjectDictionaryPage(Page):
         self._obj_type.set_selected(list(ObjectType).index(obj_type))
         self._obj_comment.get_buffer().set_text(self._selected_obj.comments)
         storage_loc = self._selected_obj.storage_location
-        self._obj_storage_loc.set_selected(list(StorageLocation).index(storage_loc))
+        self._obj_storage_loc.set_selected(self._eds.storage_locations.index(storage_loc))
         if self._selected_obj.object_type == ObjectType.VAR:
             data_type = self._selected_obj.data_type
             self._obj_data_type.set_selected(list(DataType).index(data_type))

@@ -1,7 +1,7 @@
 '''Everything to write an eds/dcf as CANopenNode OD.[c/h] files'''
 
 from . import INDENT4, INDENT8, INDENT16
-from .. import ObjectType, DataType, StorageLocation, AccessType
+from .. import ObjectType, DataType, AccessType
 from ..eds import EDS
 from ..objects import Variable
 
@@ -120,12 +120,14 @@ def remove_node_id(default_value: str) -> str:
 
     temp = default_value.split('+')
 
-    if len(temp) == 1:
+    if default_value == '':
+        return '0'
+    elif len(temp) == 1:
         return default_value  # does not include $NODEID
     elif temp[0] == '$NODEID':
-        return temp[1].rsplit()
+        return temp[1].rsplit()[0]
     elif temp[1] == '$NODEID':
-        return temp[0].rsplit()
+        return temp[0].rsplit()[0]
 
     return default_value  # does not include $NODEID
 
@@ -165,6 +167,9 @@ def attr_lines(eds: EDS, index: int) -> list:
         for i in obj.subindexes:
             name = camel_case(obj[i].parameter_name)
             default_value = remove_node_id(obj[i].default_value)
+            if isinstance(default_value, list):
+                print(default_value)
+                exit()
             lines.append(f'{INDENT8}.{name} = {default_value},')
         lines.append(INDENT4 + '},')
 
@@ -217,7 +222,7 @@ def obj_lines(eds: EDS, index) -> list:
     name = camel_case(obj.parameter_name)
     lines.append(f'{INDENT4}.o_{index:X}_{name} = ' + '{')
     if obj.object_type == ObjectType.VAR:
-        st_loc = obj.storage_location.name
+        st_loc = obj.storage_location
         if obj.data_type == DataType.VISIBLE_STRING:
             lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
             lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj)},')
@@ -231,18 +236,18 @@ def obj_lines(eds: EDS, index) -> list:
             lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj)},')
             lines.append(f'{INDENT8}.dataLength = {_var_data_type_len(obj)}')
     elif obj.object_type == ObjectType.ARRAY:
-        st_loc = obj.storage_location.name
+        st_loc = obj.storage_location
         lines.append(f'{INDENT8}.dataOrig0 = &OD_{st_loc}.x{index:X}_{name}_sub0,')
         lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
         lines.append(f'{INDENT8}.attribute0 = ODA_SDO_R,')
         lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj[1])},')
-        length = _var_data_type_len(obj)
+        length = _var_data_type_len(obj[1])
         lines.append(f'{INDENT8}.dataElementLength = {length},')
         if length > 0 and length <= 8:
             lines.append(f'{INDENT8}.dataElementSizeof = sizeof(uint{8 * length}_t)')
     else:
         for i in obj.subindexes:
-            st_loc = obj.storage_location.name
+            st_loc = obj.storage_location
             name_sub = camel_case(obj[i].parameter_name)
             lines.append(INDENT8 + '{')
             lines.append(f'{INDENT16}.dataOrig = &OD_{st_loc}.x{index:X}_{name}.{name_sub},')
@@ -284,33 +289,14 @@ def write_canopennode_c(eds: EDS, dir_path=''):
     lines.append('#endif')
     lines.append('')
 
-    lines.append('OD_ATTR_ROM OD_ROM_t OD_ROM = {')
-    for i in eds.indexes:
-        if eds[i].storage_location == StorageLocation.ROM:
-            lines += attr_lines(eds, i)
-    lines.append('};')
-    lines.append('')
-
-    lines.append('OD_ATTR_RAM OD_RAM_t OD_RAM = {')
-    for i in eds.indexes:
-        if eds[i].storage_location == StorageLocation.RAM:
-            lines += attr_lines(eds, i)
-    lines.append('};')
-    lines.append('')
-
-    lines.append('OD_ATTR_PERSIST_COMM OD_PERSIST_COMM_t OD_PERSIST_COMM = {')
-    for i in eds.indexes:
-        if eds[i].storage_location == StorageLocation.PERSIST_COMM:
-            lines += attr_lines(eds, i)
-    lines.append('};')
-    lines.append('')
-
-    lines.append('OD_ATTR_PERSIST_MFR OD_PERSIST_MFR_t OD_PERSIST_MFR = {')
-    for i in eds.indexes:
-        if eds[i].storage_location == StorageLocation.PERSIST_MFR:
-            lines += attr_lines(eds, i)
-    lines.append('};')
-    lines.append('')
+    for i in eds.storage_locations:
+        sl = i.upper().replace('-', '_')
+        lines.append(f'OD_ATTR_{sl} OD_{sl}_t OD_{sl} = ' + '{')
+        for j in eds.indexes:
+            if eds[j].storage_location == i:
+                lines += attr_lines(eds, j)
+        lines.append('};')
+        lines.append('')
 
     lines.append('typedef struct {')
     for i in eds.indexes:
@@ -437,63 +423,22 @@ def write_canopennode_h(eds: EDS, dir_path=''):
             lines.append(f'#define OD_CNT_ARR_{i:X} {len(eds[i]) - 1}')
     lines.append('')
 
-    lines.append('typedef struct {')
-    for i in eds.indexes:
-        if eds[i].storage_location == StorageLocation.ROM:
-            lines += _canopennode_h_lines(eds, i)
-    lines.append('} OD_ROM_t;')
-    lines.append('')
+    for i in eds.storage_locations:
+        sl = i.upper().replace('-', '_')
+        lines.append('typedef struct {')
+        for j in eds.indexes:
+            if eds[j].storage_location == i:
+                lines += _canopennode_h_lines(eds, j)
+        lines.append('}' + f' OD_{sl}_t;')
+        lines.append('')
 
-    lines.append('typedef struct {')
-    for i in eds.indexes:
-        if eds[i].storage_location == StorageLocation.RAM:
-            lines += _canopennode_h_lines(eds, i)
-    lines.append('} OD_RAM_t;')
-    lines.append('')
-
-    lines.append('typedef struct {')
-    for i in eds.indexes:
-        if eds[i].storage_location == StorageLocation.PERSIST_COMM:
-            lines += _canopennode_h_lines(eds, i)
-    lines.append('} OD_PERSIST_COMM_t;')
-    lines.append('')
-
-    lines.append('typedef struct {')
-    for i in eds.indexes:
-        if eds[i].storage_location == StorageLocation.PERSIST_MFR:
-            lines += _canopennode_h_lines(eds, i)
-    lines.append('} OD_PERSIST_MFR_t;')
-    lines.append('')
-
-    lines.append('#ifndef OD_ATTR_ROM')
-    lines.append('#define OD_ATTR_ROM')
-    lines.append('#endif')
-    lines.append('extern OD_ATTR_ROM OD_ROM_t OD_ROM;')
-    lines.append('')
-
-    lines.append('#ifndef OD_ATTR_RAM')
-    lines.append('#define OD_ATTR_RAM')
-    lines.append('#endif')
-    lines.append('extern OD_ATTR_RAM OD_RAM_t OD_RAM;')
-    lines.append('')
-
-    lines.append('#ifndef OD_ATTR_PERSIST_COMM')
-    lines.append('#define OD_ATTR_PERSIST_COMM')
-    lines.append('#endif')
-    lines.append('extern OD_ATTR_PERSIST_COMM OD_PERSIST_COMM_t OD_PERSIST_COMM;')
-    lines.append('')
-
-    lines.append('#ifndef OD_ATTR_PERSIST_MFR')
-    lines.append('#define OD_ATTR_PERSIST_MFR')
-    lines.append('#endif')
-    lines.append('extern OD_ATTR_PERSIST_MFR OD_PERSIST_MFR_t OD_PERSIST_MFR;')
-    lines.append('')
-
-    lines.append('#ifndef OD_ATTR_OD')
-    lines.append('#define OD_ATTR_OD')
-    lines.append('#endif')
-    lines.append('extern OD_ATTR_OD OD_t *OD;')
-    lines.append('')
+    for i in eds.storage_locations:
+        sl = i.upper().replace('-', '_')
+        lines.append(f'#ifndef OD_ATTR_{sl}')
+        lines.append(f'#define OD_ATTR_{sl}')
+        lines.append('#endif')
+        lines.append(f'extern OD_ATTR_{sl} OD_{sl}_t OD_{sl};')
+        lines.append('')
 
     for i in eds.indexes:
         lines.append(f'#define OD_ENTRY_H{i:X} &OD->list[{eds.indexes.index(i)}]')

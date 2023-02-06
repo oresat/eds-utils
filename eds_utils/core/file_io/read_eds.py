@@ -3,7 +3,7 @@
 import re
 from datetime import datetime
 
-from .. import DataType, ObjectType, AccessType, BAUD_RATE, str2int, StorageLocation
+from .. import DataType, ObjectType, AccessType, BAUD_RATE, str2int
 from ..eds import EDS, FileInfo, DeviceInfo, DeviceCommissioning
 from ..objects import Variable, Array, Record
 
@@ -98,6 +98,10 @@ def read_eds(file_path: str) -> (EDS, list):
             elif object_type == ObjectType.RECORD:
                 obj, err = _read_record(header, raw, comments)
 
+            sl = obj.storage_location
+            if sl not in eds.storage_locations:
+                eds.add_storage_location(sl)
+
             errors += err
 
             index = int(header[1:5], 16)
@@ -114,7 +118,10 @@ def read_eds(file_path: str) -> (EDS, list):
                 var.data_type = DataType.UNSIGNED8
 
             # set subindex 0's storage_location
-            eds[index][0].storage_location = eds[index].storage_location
+            sl = eds[index].storage_location
+            eds[index][0].storage_location = sl
+            if sl not in eds.storage_locations:
+                eds.add_storage_location(sl)
 
             index = int(header[1:5], 16)
             subindex = int(header[8:-1], 16)
@@ -214,11 +221,7 @@ def _read_variable(header: str, lines: dict, comments: str) -> (Variable, list):
         var.high_limit = lines['HighLimit']
 
     if ';StorageLocation' in lines:  # optional, for CANopenNode support
-        try:
-            storage_location = lines[';StorageLocation']
-            var.storage_location = StorageLocation[storage_location]
-        except KeyError:
-            errors.append(f'StorageLocation value of {storage_location} is invalid in {header}')
+        var.storage_location = lines[';StorageLocation']
 
     for i in lines:
         if i not in VARIABLE_ENTRIES:
@@ -260,11 +263,7 @@ def _read_array(header: str, lines: dict, comments: str) -> (Array, list):
         arr.denotation = lines['Denotation']
 
     if ';StorageLocation' in lines:  # optional, for CANopenNode support
-        try:
-            storage_location = lines[';StorageLocation']
-            arr.storage_location = StorageLocation[storage_location]
-        except KeyError:
-            errors.append(f'StorageLocation value of {storage_location} is invalid in {header}')
+        arr.storage_location = lines[';StorageLocation']
 
     # NOTE: SubNumber is mandatory entry, but is not used by Array class
 
@@ -308,11 +307,7 @@ def _read_record(header: str, lines: dict, comments: str) -> (Record, list):
         rec.denotation = lines['Denotation']
 
     if ';StorageLocation' in lines:  # optional, for CANopenNode support
-        try:
-            storage_location = lines[';StorageLocation']
-            rec.storage_location = StorageLocation[storage_location]
-        except KeyError:
-            errors.append(f'StorageLocation value of {storage_location} is invalid in {header}')
+        rec.storage_location = lines[';StorageLocation']
 
     # NOTE: SubNumber is mandatory entry, but is not used by Record class
 
