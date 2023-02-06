@@ -40,8 +40,8 @@ class EDSNotebook(Gtk.Notebook):
 
         self.gi_page = GeneralInfoPage(self.eds)
         self.od_page = ObjectDictionaryPage(self.eds, self.parent_window)
-        self.rpdo_page = PDOPage(self.eds, 'RPDO')
-        self.tpdo_page = PDOPage(self.eds, 'TPDO')
+        self.rpdo_page = PDOPage(self.eds, self.parent_window, 'RPDO')
+        self.tpdo_page = PDOPage(self.eds, self.parent_window, 'TPDO')
         self.dc_page = DeviceCommissioningPage(self.eds)
 
         self.append_page(self.gi_page, Gtk.Label.new('General Info'))

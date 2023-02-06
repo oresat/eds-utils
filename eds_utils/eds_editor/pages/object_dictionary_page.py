@@ -484,7 +484,7 @@ class ObjectDictionaryPage(Page):
         dialog.show()
 
     def add_treeview_object_response(self, dialog: Gtk.Dialog, response: int):
-        '''Parses the response to the ad object dialog..'''
+        '''Parses the response to the add object dialog.'''
 
         self._eds_changed = True
 

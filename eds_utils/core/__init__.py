@@ -74,6 +74,31 @@ class DataType(IntEnum):
     def to_str(self):
         return f'0x{self.value:04X}'
 
+    @property
+    def size(self):
+        '''Get data size in bits (dyanmic types like DOMAIN, VISIBLE_STRING will return 0)'''
+        size = 0
+
+        if self.value in [DataType.BOOLEAN, DataType.INTEGER8, DataType.UNSIGNED8]:
+            size = 8
+        elif self.value in [DataType.INTEGER16, DataType.UNSIGNED16]:
+            size = 16
+        elif self.value in [DataType.INTEGER24, DataType.UNSIGNED24]:
+            size = 24
+        elif self.value in [DataType.INTEGER32, DataType.UNSIGNED32, DataType.REAL32]:
+            size = 32
+        elif self.value in [DataType.INTEGER40, DataType.UNSIGNED40]:
+            size = 40
+        elif self.value in [DataType.INTEGER48, DataType.UNSIGNED48, DataType.TIME_OF_DAY,
+                            DataType.TIME_DIFFERENCE]:
+            size = 48
+        elif self.value in [DataType.INTEGER56, DataType.UNSIGNED56]:
+            size = 56
+        elif self.value in [DataType.INTEGER64, DataType.UNSIGNED64, DataType.REAL64]:
+            size = 64
+
+        return size
+
 
 class AccessType(Enum):
     RO = auto()

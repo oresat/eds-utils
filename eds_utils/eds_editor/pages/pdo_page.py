@@ -3,6 +3,7 @@ from gi.repository import Gtk, Pango
 from ...core import str2int, TPDO_TRANSMISSION_TYPES, RPDO_TRANSMISSION_TYPES
 from ...core.eds import EDS
 from ...core.objects import Variable
+from ..dialogs.add_mapped_object_dialog import AddMappedObjectDialog
 from .page import Page
 
 
@@ -35,8 +36,10 @@ def pdo_mapping_fields(value: str) -> (int, int, int):
 class PDOPage(Page):
     '''A page to edit the RPDOs and/or TPDOs of the eds / dcf file.'''
 
-    def __init__(self, eds: EDS, pdo: str):
+    def __init__(self, eds: EDS, parent_window: Gtk.Window, pdo: str):
         super().__init__(eds)
+
+        self._parent_window = parent_window
 
         if pdo.upper() == 'RPDO':
             self._pdo = 'RPDO'
@@ -45,7 +48,7 @@ class PDOPage(Page):
         else:
             raise ValueError('pdo must be "RPDO" or "TPDO"')
 
-        self._grid = ParaGrid(eds, pdo)
+        self._grid = ParaGrid(eds, parent_window, pdo)
         self.set_child(self._grid)
 
     def refresh(self):
@@ -81,10 +84,11 @@ class ParaGrid(Gtk.Frame):
     _REMOVE_I = _ADD_I + _ADD_W
     _REMOVE_W = 2
 
-    def __init__(self, eds: EDS, pdo: str):
+    def __init__(self, eds: EDS, parent_window, pdo: str):
         super().__init__(label=f'{pdo}', margin_top=5, margin_bottom=5, margin_start=5,
                          margin_end=5)
 
+        self._parent_window = parent_window
         self._eds = eds
 
         if pdo.upper() == 'RPDO':
@@ -275,9 +279,24 @@ class ParaGrid(Gtk.Frame):
                 break  # no more PDOs to deal with
 
     def _on_add_clicked(self, button: Gtk.Button):
-        col, row, width, height = self._map_grid.query_child(button)
+        col, row, width, height = self._grid.query_child(button)
+        start = EDS.RPDO_PARA_START if self._pdo == 'RPDO' else EDS.TPDO_PARA_START
+        index = start + row - 1
+
+        dialog = AddMappedObjectDialog(self._parent_window, self._eds, index)
+        dialog.connect('response', self.add_mapped_object_response)
+        dialog.show()
+
+    def add_mapped_object_response(self, dialog: Gtk.Dialog, response: int):
+        '''Parses the response to the add mapped object dialog.'''
+
+        self._eds_changed = True
+        self.refresh()
 
     def _on_remove_clicked(self, button: Gtk.Button):
+
+        self._eds_changed = True
+
         col, row, width, height = self._grid.query_child(button)
 
         start = EDS.RPDO_PARA_START if self._pdo == 'RPDO' else EDS.TPDO_PARA_START
