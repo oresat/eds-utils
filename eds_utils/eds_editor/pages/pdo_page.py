@@ -14,7 +14,7 @@ def pdo_mapping_fields(value: str) -> (int, int, int):
     Parameters
     ----------
     value: str
-        THe PDO mapping value
+        The PDO mapping value
 
     Returns
     -------
@@ -40,7 +40,7 @@ class PDOPage(Page):
     _NAME_I = 0
     _NAME_W = 4
     _COB_I = _NAME_I + _NAME_W
-    _COB_W = 4
+    _COB_W = 6
     _PLUS_I = _COB_I + _COB_W
     _PLUS_W = 4
     _VALID_I = _PLUS_I + _PLUS_W
@@ -76,6 +76,11 @@ class PDOPage(Page):
         else:
             raise ValueError('pdo must be "RPDO" or "TPDO"')
 
+        self._comm_start = EDS.RPDO_COMM_START if self._pdo == 'RPDO' else EDS.TPDO_COMM_START
+        self._comm_end = self._comm_start + 0x200
+        self._para_start = EDS.RPDO_PARA_START if self._pdo == 'RPDO' else EDS.TPDO_PARA_START
+        self._para_end = self._para_start + 0x200
+
         frame = Gtk.Frame(label=f'{pdo}', margin_top=5, margin_bottom=5, margin_start=5,
                           margin_end=5)
         self.set_child(frame)
@@ -97,12 +102,10 @@ class PDOPage(Page):
         label = Gtk.Label.new('Event Time (ms)')
         self._grid.attach(label, self._EVENT_I, 0, self._EVENT_W, 1)
         if self._pdo == 'TPDO':
-            label = Gtk.Label.new('Inbit Time (ms)')
+            label = Gtk.Label.new('Inhibit Time (ms)')
             self._grid.attach(label, self._INBIT_I, 0, self._INBIT_W, 1)
             label = Gtk.Label.new('Sync Start Value')
             self._grid.attach(label, self._SYNC_I, 0, self._SYNC_W, 1)
-        box = Gtk.Box.new(Gtk.Orientation.HORIZONTAL, 5)
-        box.set_homogeneous(True)
 
         for i in range(8):
             label = Gtk.Label.new(f'Byte {i}')
@@ -114,20 +117,25 @@ class PDOPage(Page):
             label = Gtk.Label.new(f'{self._pdo} {i}')
             self._grid.attach(label, self._NAME_I, i, self._NAME_W, 1)
 
-            entry = Gtk.Entry()
-            entry.set_max_length(5)
-            self._grid.attach(entry, self._COB_I, i, self._COB_W, 1)
+            spin = Gtk.SpinButton.new_with_range(0, 0xFFF, 1)
+            spin.set_value(0)
+            spin.connect('value-changed', self._on_cob_id_changed)
+            spin.connect('output', self._on_cob_id_output)
+            self._grid.attach(spin, self._COB_I, i, self._COB_W, 1)
 
             check = Gtk.CheckButton()
             check.set_halign(Gtk.Align.CENTER)
+            check.connect('toggled', self._on_nodeid_toggled)
             self._grid.attach(check, self._PLUS_I, i, self._PLUS_W, 1)
 
             check = Gtk.CheckButton()
             check.set_halign(Gtk.Align.CENTER)
+            check.connect('toggled', self._on_valid_toggled)
             self._grid.attach(check, self._VALID_I, i, self._VALID_W, 1)
 
             check = Gtk.CheckButton()
             check.set_halign(Gtk.Align.CENTER)
+            check.connect('toggled', self._on_rtr_toggled)
             self._grid.attach(check, self._RTR_I, i, self._RTR_W, 1)
 
             dropdown = Gtk.DropDown()
@@ -136,17 +144,21 @@ class PDOPage(Page):
             else:
                 transmission_list = Gtk.StringList.new(strings=TPDO_TRANSMISSION_TYPES)
             dropdown.set_model(transmission_list)
+            dropdown.connect('notify::selected-item', self._on_trans_changed)
             self._grid.attach(dropdown, self._TRANS_I, i, self._TRANS_W, 1)
 
             spin = Gtk.SpinButton.new_with_range(0, 0xFFFF, 1)
             spin.set_value(0)
+            spin.connect('value-changed', self._on_event_changed)
             self._grid.attach(spin, self._EVENT_I, i, self._EVENT_W, 1)
 
             if self._pdo == 'TPDO':
                 spin = Gtk.SpinButton.new_with_range(0, 0xFFFF, 1)
+                spin.connect('value-changed', self._on_inhibit_changed)
                 self._grid.attach(spin, self._INBIT_I, i, self._INBIT_W, 1)
 
                 spin = Gtk.SpinButton.new_with_range(0, 0xFF, 1)
+                spin.connect('value-changed', self._on_sync_changed)
                 self._grid.attach(spin, self._SYNC_I, i, self._SYNC_W, 1)
 
             button = Gtk.Button(label='Add')
@@ -180,35 +192,33 @@ class PDOPage(Page):
 
     def refresh(self):
         mappable_objs = self._mappable_rpdos_names()
-        start = EDS.RPDO_COMM_START if self._pdo == 'RPDO' else EDS.TPDO_COMM_START
-        map_start = EDS.RPDO_PARA_START if self._pdo == 'RPDO' else EDS.TPDO_PARA_START
-        stop = start + 0x200
 
         pdo = 1
-        for i in range(start, stop):
+        for i in range(self._comm_start, self._comm_end):
             cob_id_raw = self._eds[i][1].default_value.replace(' ', '').split('+')
             cob_id_int = str2int(cob_id_raw[0])
-            cob_id = f'0x{(cob_id_int & 0xFFF):X}'
+            cob_id = cob_id_int & 0xFFF
             cob_id_nodeid = len(cob_id_raw) == 2
             valid = not bool(cob_id_int & 0x80000000)
             rtr = not bool(cob_id_int & 0x40000000)
             trans_time = str2int(self._eds[i][2].default_value)
             event_time = str2int(self._eds[i][5].default_value)
-            if self._pdo == 'TPDO':
-                inhibit_time = str2int(self._eds[i][3].default_value)
-                sync_start = str2int(self._eds[i][6].default_value)
 
-            self._grid.get_child_at(self._COB_I, pdo).set_text(cob_id)
+            self._grid.get_child_at(self._COB_I, pdo).set_value(cob_id)
             self._grid.get_child_at(self._PLUS_I, pdo).set_active(cob_id_nodeid)
             self._grid.get_child_at(self._VALID_I, pdo).set_active(valid)
             self._grid.get_child_at(self._RTR_I, pdo).set_active(rtr)
             self._grid.get_child_at(self._TRANS_I, pdo).set_selected(trans_time)
             self._grid.get_child_at(self._EVENT_I, pdo).set_value(event_time)
+
             if self._pdo == 'TPDO':
+                inhibit_time = str2int(self._eds[i][3].default_value)
+                sync_start = str2int(self._eds[i][6].default_value)
+
                 self._grid.get_child_at(self._INBIT_I, pdo).set_value(inhibit_time)
                 self._grid.get_child_at(self._SYNC_I, pdo).set_value(sync_start)
 
-            index = map_start + pdo - 1
+            index = self._para_start + pdo - 1
 
             # remove any old childs
             for subindex in range(0, len(self._eds[index]) - 1):
@@ -260,10 +270,87 @@ class PDOPage(Page):
                     (self._pdo == 'TPDO' and pdo > self._eds.tpdos):
                 break  # no more PDOs to deal with
 
+    def _get_index(self, widget: Gtk.Widget) -> int:
+        '''Get the PDO index difference base off of the Widget location.'''
+
+        _, row, _, _ = self._grid.query_child(widget)
+        return row - 1
+
+    def _on_cob_id_output(self, spin: Gtk.SpinButton) -> bool:
+        '''Format the COB ID to be a hex value.'''
+
+        spin.props.text = f'0x{int(spin.get_value()):X}'
+        return True
+
+    def _on_cob_id_changed(self, spin: Gtk.SpinButton):
+        index = self._comm_start + self._get_index(spin)
+        value = self._eds[index][1].default_value
+
+        new_value = value[:7]
+        new_value += f'{int(spin.get_value()):03X}'
+        if value.endswith('+$NODEID'):
+            new_value += '+$NODEID'
+
+        self._eds[index][1].default_value = new_value
+
+    def _on_nodeid_toggled(self, check: Gtk.CheckButton):
+        index = self._comm_start + self._get_index(check)
+        value = self._eds[index][1].default_value
+
+        if check.get_active() and not value.endswith('+$NODEID'):
+            value += '+$NODEID'
+        elif not check.get_active() and value.endswith('+$NODEID'):
+            value = value[:-8]
+
+        self._eds[index][1].default_value = value
+
+    def _on_valid_toggled(self, check: Gtk.CheckButton):
+        index = self._comm_start + self._get_index(check)
+        value = self._eds[index][1].default_value
+
+        raw = int(value[2], 16)
+        if check.get_active():
+            raw &= 0x7
+        else:
+            raw |= 0x8
+        value_list = list(value)
+        value_list[2] = f'{raw:X}'
+
+        self._eds[index][1].default_value = ''.join(value_list)
+
+    def _on_rtr_toggled(self, check: Gtk.CheckButton):
+        index = self._comm_start + self._get_index(check)
+
+        value = self._eds[index][1].default_value
+        raw = int(value[2], 16)
+        if check.get_active():
+            raw &= 0xB
+        else:
+            raw |= 0x4
+        value_list = list(value)
+        value_list[2] = f'{raw:X}'
+
+        self._eds[index][1].default_value = ''.join(value_list)
+
+    def _on_trans_changed(self, dropdown: Gtk.DropDown, flag: Gtk.StateFlags):
+        index = self._comm_start + self._get_index(dropdown)
+        self._eds[index][2].default_value = str(dropdown.get_selected())
+
+    def _on_inhibit_changed(self, spin: Gtk.SpinButton):
+        index = self._comm_start + self._get_index(spin)
+        self._eds[index][3].default_value = str(int(spin.get_value()))
+
+    def _on_event_changed(self, spin: Gtk.SpinButton):
+        index = self._comm_start + self._get_index(spin)
+        self._eds[index][5].default_value = str(int(spin.get_value()))
+
+    def _on_sync_changed(self, spin: Gtk.SpinButton):
+        index = self._comm_start + self._get_index(spin)
+        self._eds[index][6].default_value = str(int(spin.get_value()))
+
     def _on_add_clicked(self, button: Gtk.Button):
-        col, row, width, height = self._grid.query_child(button)
-        start = EDS.RPDO_PARA_START if self._pdo == 'RPDO' else EDS.TPDO_PARA_START
-        index = start + row - 1
+
+        index = self._para_start + self._get_index(button)
 
         dialog = AddMappedObjectDialog(self._parent_window, self._eds, index)
         dialog.connect('response', self.add_mapped_object_response)
@@ -277,15 +364,12 @@ class PDOPage(Page):
 
     def _on_remove_clicked(self, button: Gtk.Button):
 
-        self._eds_changed = True
+        index = self._para_start + self._get_index(button)
 
-        col, row, width, height = self._grid.query_child(button)
-
-        start = EDS.RPDO_PARA_START if self._pdo == 'RPDO' else EDS.TPDO_PARA_START
-        index = start + row - 1
         for subindex in range(len(self._eds[index]) - 1, 0, -1):
             if self._eds[index][subindex].default_value != '0x00000000':
                 self._eds[index][subindex].default_value = '0x00000000'
+                self._eds_changed = True
                 break
 
         self.refresh()

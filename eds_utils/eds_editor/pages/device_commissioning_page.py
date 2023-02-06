@@ -39,6 +39,7 @@ class DeviceCommissioningPage(Page):
         label = Gtk.Label.new('Node ID:')
         label.set_halign(Gtk.Align.START)
         node_id = Gtk.SpinButton()
+        node_id.connect('output', self._on_nodeid_output)
         self._node_id = Gtk.Adjustment.new(1, 0x1, 0x7F, 1, 0, 0)
         node_id.set_adjustment(self._node_id)
         grid.attach(label, column=3, row=0, width=1, height=1)
@@ -133,3 +134,9 @@ class DeviceCommissioningPage(Page):
         self._baud_rate_buttons[index].set_active(True)
         self._canopen_manager.set_state(device_comm.canopen_manager)
         self._lss_serial_num.set_value(device_comm.lss_serialnumber)
+
+    def _on_nodeid_output(self, spin: Gtk.SpinButton) -> bool:
+        '''Format the Node ID to be a hex value.'''
+
+        spin.props.text = f'0x{int(spin.get_value()):X}'
+        return True
