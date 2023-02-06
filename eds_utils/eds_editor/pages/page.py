@@ -28,3 +28,8 @@ class Page(Gtk.ScrolledWindow):
         '''Reset the eds changed flag.'''
 
         self._eds_changed = False
+
+    def refresh(self):
+        '''Refresh the page'''
+
+        pass

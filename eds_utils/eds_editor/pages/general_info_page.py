@@ -234,6 +234,11 @@ class GeneralInfoPage(Page):
         button.connect('clicked', self.on_cancel_button_clicked)
         box2.append(button)
 
+        self.refresh()
+
+    def refresh(self):
+        '''Refresh the page'''
+
         # fillout file info
         file_info = self._eds.file_info
         self._file_name.set_text(file_info.file_name)
@@ -323,4 +328,4 @@ class GeneralInfoPage(Page):
     def on_cancel_button_clicked(self, button: Gtk.Button):
         '''Reset the values from the gui to the values from the data structure'''
 
-        self._load_eds(self._eds)
+        self.refresh()

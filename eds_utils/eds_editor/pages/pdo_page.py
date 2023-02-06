@@ -191,6 +191,8 @@ class PDOPage(Page):
         return objs
 
     def refresh(self):
+        '''Refresh the page'''
+
         mappable_objs = self._mappable_rpdos_names()
 
         pdo = 1

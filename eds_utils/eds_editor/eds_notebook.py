@@ -50,14 +50,23 @@ class EDSNotebook(Gtk.Notebook):
         self.append_page(self.tpdo_page, Gtk.Label.new('TPDOs'))
         self.append_page(self.dc_page, Gtk.Label.new('Device Commissioning'))
 
+        self.connect('switch-page', self._on_page_changed)
+
         # save a tempory eds file at an interval
         GLib.timeout_add_seconds(30, self._save_eds_tmp)
+
+    def _on_page_changed(self, notebook: Gtk.Notebook, page: Gtk.Widget, page_num: int):
+        '''Refresh the new page'''
+
+        page.refresh()
 
     def _eds_changed_reset(self):
         '''Reset the eds changed flags'''
 
         self.gi_page.eds_changed_reset()
         self.od_page.eds_changed_reset()
+        self.rpdo_page.eds_changed_reset()
+        self.tpdo_page.eds_changed_reset()
         self.dc_page.eds_changed_reset()
 
     def save_eds(self, file_path=''):
@@ -97,7 +106,8 @@ class EDSNotebook(Gtk.Notebook):
         '''bool: Flag if the eds file has change and not been saved.'''
 
         ret = False
-        if self.gi_page.eds_changed or self.od_page.eds_changed or self.dc_page.eds_changed:
+        if True in [self.gi_page.eds_changed, self.od_page.eds_changed, self.rpdo_page.eds_changed,
+                    self.tpdo_page.eds_changed, self.dc_page.eds_changed]:
             ret = True
 
         return ret

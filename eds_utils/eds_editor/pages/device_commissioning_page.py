@@ -122,8 +122,8 @@ class DeviceCommissioningPage(Page):
         device_comm.canopen_manager = self._canopen_manager.get_state()
         device_comm.lss_serialnumber = int(self._lss_serial_num.get_value())
 
-    def on_cancel_button_clicked(self, button: Gtk.Button):
-        '''Cancel button callback to cancel / clear changes the device commissioning info.'''
+    def refresh(self):
+        '''Refresh the page'''
 
         device_comm = self._eds.device_commissioning
         self._node_name.set_text(device_comm.node_name)
@@ -134,6 +134,11 @@ class DeviceCommissioningPage(Page):
         self._baud_rate_buttons[index].set_active(True)
         self._canopen_manager.set_state(device_comm.canopen_manager)
         self._lss_serial_num.set_value(device_comm.lss_serialnumber)
+
+    def on_cancel_button_clicked(self, button: Gtk.Button):
+        '''Cancel button callback to cancel / clear changes the device commissioning info.'''
+
+        self.refresh()
 
     def _on_nodeid_output(self, spin: Gtk.SpinButton) -> bool:
         '''Format the Node ID to be a hex value.'''

@@ -197,7 +197,7 @@ class ObjectDictionaryPage(Page):
         button.connect('clicked', self.on_cancel_button_clicked)
         grid.attach(button, column=2, row=12, width=2, height=2)
 
-        self.reload_eds()
+        self.refresh()
 
     def on_update_button_clicked(self, button: Gtk.Button):
         '''Update button callback to save changes the selected object.'''
@@ -348,8 +348,9 @@ class ObjectDictionaryPage(Page):
 
         self._load_selection()
 
-    def reload_eds(self):
-        '''Reload the eds in the treeview.'''
+    def refresh(self):
+        '''Refresh the page'''
+
         self._indexes_store.clear()
 
         # fill tree view with object dictionary data
