@@ -112,6 +112,11 @@ class PDOPage(Page):
             col = self._BYTES_I + i * 8
             self._grid.attach(label, col, 0, self._BYTE_W, 1)
 
+        if self._pdo == 'RPDO':
+            transmission_list = Gtk.StringList.new(strings=RPDO_TRANSMISSION_TYPES)
+        else:
+            transmission_list = Gtk.StringList.new(strings=TPDO_TRANSMISSION_TYPES)
+
         pdos = self._eds.rpdos if self._pdo == 'RPDO' else self._eds.tpdos
         for i in range(1, pdos + 1):
             label = Gtk.Label.new(f'{self._pdo} {i}')
@@ -139,10 +144,6 @@ class PDOPage(Page):
             self._grid.attach(check, self._RTR_I, i, self._RTR_W, 1)
 
             dropdown = Gtk.DropDown()
-            if self._pdo == 'RPDO':
-                transmission_list = Gtk.StringList.new(strings=RPDO_TRANSMISSION_TYPES)
-            else:
-                transmission_list = Gtk.StringList.new(strings=TPDO_TRANSMISSION_TYPES)
             dropdown.set_model(transmission_list)
             dropdown.connect('notify::selected-item', self._on_trans_changed)
             self._grid.attach(dropdown, self._TRANS_I, i, self._TRANS_W, 1)
@@ -173,27 +174,8 @@ class PDOPage(Page):
 
         self.refresh()
 
-    def _mappable_rpdos_names(self) -> dict:
-        objs = {}
-
-        for i in self._eds.indexes:
-            index = self._eds[i]
-            if isinstance(index, Variable):
-                if index.pdo_mapping:
-                    objs[index] = f'{index.parameter_name} - {i:X}'
-                continue
-            else:
-                for j in index.subindexes:
-                    subindex = index[j]
-                    if subindex.pdo_mapping:
-                        objs[subindex] = f'{subindex.parameter_name} - {i:4X}sub{j:02X}'
-
-        return objs
-
     def refresh(self):
         '''Refresh the page'''
-
-        mappable_objs = self._mappable_rpdos_names()
 
         pdo = 1
         for i in range(self._comm_start, self._comm_end):
@@ -242,12 +224,14 @@ class PDOPage(Page):
 
                 obj_index, obj_subindex, obj_size = pdo_mapping_fields(value)
 
-                if isinstance(self._eds[obj_index], Variable):
-                    obj = self._eds[obj_index]
+                obj = self._eds[obj_index]
+                if isinstance(obj, Variable):
+                    name = f'{obj.parameter_name} - {i:X}'
                 else:
-                    obj = self._eds[obj_index][obj_subindex]
+                    name = f'{obj.parameter_name} - {obj[obj_subindex].parameter_name} - ' \
+                           f'{obj_index:4X}sub{obj_subindex:02X}'
 
-                label.set_text(mappable_objs[obj])
+                label.set_text(name)
 
                 col = self._BYTES_I + size_offset
                 self._grid.attach(button, col, pdo, obj_size, 1)
