@@ -23,8 +23,8 @@ class FileInfo:
 @dataclass
 class DeviceInfo:
 
-    vender_name: str = ''
-    vender_number: int = 0
+    vendor_name: str = ''
+    vendor_number: int = 0
     product_name: str = ''
     product_number: int = 0
     revision_number: int = 0

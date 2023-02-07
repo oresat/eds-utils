@@ -487,12 +487,12 @@ def _read_device_info(header: str, lines: dict) -> (DeviceInfo, list):
     device_info = DeviceInfo()
 
     try:
-        device_info.vender_name = lines['VendorName']
+        device_info.vendor_name = lines['VendorName']
     except KeyError:
         errors.append(f'VendorName was missing from {header}')
 
     try:
-        device_info.vender_number = _read_int_value(header, lines, 'VendorNumber')
+        device_info.vendor_number = _read_int_value(header, lines, 'VendorNumber')
     except ValueError as exc:
         errors.append(str(exc))
 

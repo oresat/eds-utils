@@ -47,8 +47,8 @@ def write_eds(eds: EDS, file_path='', dcf=False):
 
     # device info seciton
     lines.append('[DeviceInfo]')
-    lines.append(f'VendorName={eds.device_info.vender_name}')
-    lines.append(f'VendorNumber={eds.device_info.vender_number}')
+    lines.append(f'VendorName={eds.device_info.vendor_name}')
+    lines.append(f'VendorNumber={eds.device_info.vendor_number}')
     lines.append(f'ProductName={eds.device_info.product_name}')
     lines.append(f'ProductNumber={eds.device_info.product_number}')
     lines.append(f'RevisionNumber={eds.device_info.revision_number}')
