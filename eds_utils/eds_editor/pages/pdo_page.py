@@ -1,36 +1,10 @@
 from gi.repository import Gtk, Pango
 
-from ...core import str2int, TPDO_TRANSMISSION_TYPES, RPDO_TRANSMISSION_TYPES
+from ...core import str2int, TPDO_TRANSMISSION_TYPES, RPDO_TRANSMISSION_TYPES, pdo_mapping_fields
 from ...core.eds import EDS
 from ...core.objects import Variable
 from ..dialogs.add_mapped_object_dialog import AddMappedObjectDialog
 from .page import Page
-
-
-def pdo_mapping_fields(value: str) -> (int, int, int):
-    '''
-    Pull out the values from a PDO mapping value.
-
-    Parameters
-    ----------
-    value: str
-        The PDO mapping value
-
-    Returns
-    -------
-    int
-        Mapped object index
-    int
-        Mapped object subindex
-    int
-        Mapped object size in bits
-    '''
-
-    index = str2int(value[:6])
-    subindex = str2int(f'0x{value[6:8]}')
-    size = str2int(f'0x{value[8:]}')
-
-    return index, subindex, size
 
 
 class PDOPage(Page):

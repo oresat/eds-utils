@@ -46,12 +46,12 @@ class AddMappedObjectDialog(Gtk.Dialog):
                 if index.pdo_mapping and index.data_type.size <= free:
                     name = f'{index.parameter_name} - {i:X}'
                     self._mappable_objs[name] = index
-                continue
             else:
                 for j in index.subindexes:
                     subindex = index[j]
                     if subindex.pdo_mapping and subindex.data_type.size <= free:
-                        name = f'{subindex.parameter_name} - {i:4X}sub{j:02X}'
+                        name = f'{index.parameter_name} - {subindex.parameter_name} - ' \
+                               f'{i:4X}sub{j:02X}'
                         self._mappable_objs[name] = subindex
 
         label = Gtk.Label.new('Object to Map')

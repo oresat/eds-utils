@@ -8,34 +8,6 @@ from ..objects import Variable
 _SKIP_INDEXES = [0x1F81, 0x1F82]
 '''CANopenNode skips the data for theses for some reason'''
 
-DATA_TYPE_LENGTH = {
-    DataType.BOOLEAN: 1,
-    DataType.INTEGER8: 1,
-    DataType.INTEGER16: 2,
-    DataType.INTEGER32: 4,
-    DataType.UNSIGNED8: 1,
-    DataType.UNSIGNED16: 2,
-    DataType.UNSIGNED32: 4,
-    DataType.REAL32: 4,
-    DataType.VISIBLE_STRING: 0,
-    DataType.OCTET_STRING: 0,
-    DataType.UNICODE_STRING: 0,
-    DataType.TIME_OF_DAY: 6,
-    DataType.TIME_DIFFERENCE: 6,
-    DataType.DOMAIN: 0,
-    DataType.INTEGER24: 3,
-    DataType.REAL64: 8,
-    DataType.INTEGER40: 5,
-    DataType.INTEGER48: 6,
-    DataType.INTEGER56: 7,
-    DataType.INTEGER64: 8,
-    DataType.UNSIGNED24: 3,
-    DataType.UNSIGNED40: 5,
-    DataType.UNSIGNED48: 6,
-    DataType.UNSIGNED56: 7,
-    DataType.UNSIGNED64: 8,
-}
-
 DATA_TYPE_STR = [
     DataType.VISIBLE_STRING,
     DataType.UNICODE_STRING,
@@ -211,7 +183,7 @@ def _var_data_type_len(var: Variable) -> int:
     if var.data_type in DATA_TYPE_STR:
         length = len(var.default_value)
     else:
-        length = DATA_TYPE_LENGTH[var.data_type]
+        length = var.data_type.size // 8
 
     return length
 
@@ -234,9 +206,9 @@ def _var_attr_flags(var: Variable) -> str:
         if var.pdo_mapping:
             attr_str += ' | ODA_TRPDO'
 
-    if var.data_type in [DataType.VISIBLE_STRING, DataType.UNICODE_STRING]:
+    if var.data_type in DATA_TYPE_STR:
         attr_str += ' | ODA_STR'
-    elif DATA_TYPE_LENGTH[var.data_type] > 1:
+    elif (var.data_type // 8) > 1:
         attr_str += ' | ODA_MB'
 
     return attr_str

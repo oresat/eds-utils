@@ -44,17 +44,17 @@ class ObjectDictionaryPage(Page):
         button.connect('clicked', self.on_expand_clicked)
         box_search.append(button)
 
-        self._od_scrolled_window = Gtk.ScrolledWindow()
-        self._od_scrolled_window.set_vexpand(True)
-        self._od_scrolled_window.set_hexpand(True)
-        self._od_scrolled_window.set_has_frame(True)
-        box_tree.append(self._od_scrolled_window)
+        scrolled_window = Gtk.ScrolledWindow()
+        scrolled_window.set_vexpand(True)
+        scrolled_window.set_hexpand(True)
+        scrolled_window.set_has_frame(True)
+        box_tree.append(scrolled_window)
 
         self._indexes_store = Gtk.TreeStore(str, str)
         self._tree_filter = self._indexes_store.filter_new()
         self._tree_filter.set_visible_func(self.tree_filter_func)
         self._od_treeview = Gtk.TreeView()
-        self._od_scrolled_window.set_child(self._od_treeview)
+        scrolled_window.set_child(self._od_treeview)
         self._od_treeview.set_model(self._tree_filter)
         self._od_treeview.set_enable_tree_lines(True)
 
@@ -94,7 +94,6 @@ class ObjectDictionaryPage(Page):
         grid = Gtk.Grid(column_spacing=5, row_spacing=5,
                         column_homogeneous=True, row_homogeneous=True,
                         margin_top=5, margin_bottom=5, margin_start=5, margin_end=5)
-        frame.set_valign(Gtk.Align.START)
         frame.set_child(grid)
 
         label = Gtk.Label.new('Parameter Name:')

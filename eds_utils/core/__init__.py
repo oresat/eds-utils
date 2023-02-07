@@ -1,3 +1,4 @@
+import re
 from enum import Enum, IntEnum, auto
 
 
@@ -136,3 +137,32 @@ TPDO_TRANSMISSION_TYPES.append('RTC-only (Event-Driven)')
 TPDO_TRANSMISSION_TYPES.append('Event-Driven (Manufacture)')
 TPDO_TRANSMISSION_TYPES.append('Event-Driven (Device / App)')
 '''All valid TPDO transmission types'''
+
+
+def pdo_mapping_fields(value: str) -> (int, int, int):
+    '''
+    Pull out the values from a PDO mapping value.
+
+    Parameters
+    ----------
+    value: str
+        The PDO mapping value
+
+    Returns
+    -------
+    int
+        Mapped object index
+    int
+        Mapped object subindex
+    int
+        Mapped object size in bits
+    '''
+
+    if not re.match(r'^0x[\da-zA-Z]{8}$', value):
+        raise ValueError(f'Invalid pdo mapping value {value}')
+
+    index = str2int(value[:6])
+    subindex = str2int(f'0x{value[6:8]}')
+    size = str2int(f'0x{value[8:]}')
+
+    return index, subindex, size

@@ -3,7 +3,7 @@
 import re
 from datetime import datetime
 
-from .. import DataType, ObjectType, AccessType, BAUD_RATE, str2int
+from .. import DataType, ObjectType, AccessType, BAUD_RATE, str2int, pdo_mapping_fields
 from ..eds import EDS, FileInfo, DeviceInfo, DeviceCommissioning
 from ..objects import Variable, Array, Record
 
@@ -11,7 +11,7 @@ VARIABLE_ENTRIES = [
     'ParameterName',
     'Denotation',
     'ObjectType',
-    ';StorageLocation',
+    ';StorageLocation',  # CANopenNode support
     'DataType',
     'LowLimit',
     'HighLimit',
@@ -25,7 +25,7 @@ ARRAY_RECORD_ENTRIES = [
     'ParameterName',
     'Denotation',
     'ObjectType',
-    ';StorageLocation',
+    ';StorageLocation',  # CANopenNode support
     'SubNumber',
 ]
 '''All valid entries in an array and record'''
@@ -63,6 +63,10 @@ def read_eds(file_path: str) -> (EDS, list):
             eds.canopennode = True
             break
 
+    mandatory_objs = []
+    manufacturer_objs = []
+    optional_objs = []
+
     for section_lines in raw.split('\n\n'):
         if section_lines == '':
             continue  # handle new line at EOF
@@ -93,6 +97,7 @@ def read_eds(file_path: str) -> (EDS, list):
 
             if object_type in [None, ObjectType.VAR]:
                 obj, err = _read_variable(header, raw, comments)
+
             elif object_type == ObjectType.ARRAY:
                 obj, err = _read_array(header, raw, comments)
             elif object_type == ObjectType.RECORD:
@@ -138,20 +143,88 @@ def read_eds(file_path: str) -> (EDS, list):
             eds.device_info, err = _read_device_info(header, raw)
             errors += err
         elif header == '[DeviceComissioning]':  # only in DCFs, only one 'm' in header
-            eds.device_commissioning, err = _read_device_commisioning(header, raw)
+            eds.device_commissioning, err = _read_device_commissioning(header, raw)
             errors += err
         elif header == '[DummyUsage]':
             continue  # TODO
         elif header == '[Comments]':
             continue  # TODO
         elif header == '[MandatoryObjects]':
-            continue  # TODO ?
+            keys = list(raw.keys())
+            keys.remove('SupportedObjects')
+            mandatory_objs = [str2int(raw[i]) for i in keys]
         elif header == '[OptionalObjects]':
-            continue  # TODO ?
+            keys = list(raw.keys())
+            keys.remove('SupportedObjects')
+            optional_objs = [str2int(raw[i]) for i in keys]
         elif header == '[ManufacturerObjects]':
-            continue  # TODO ?
+            keys = list(raw.keys())
+            keys.remove('SupportedObjects')
+            manufacturer_objs = [str2int(raw[i]) for i in keys]
         else:
             errors.append(f'Unknown header: {header}')
+
+    if mandatory_objs:
+        a = set(mandatory_objs)
+        b = set(eds.mandatory_objects)
+        for i in list(a - b):
+            errors.append(f'0x{i:X} was missing from [MandatoryObjects]')
+        for i in list(b - a):
+            errors.append(f'0x{i:X} was in [MandatoryObjects], but does not exist')
+    else:
+        errors.append('Section [MandatoryObjects] was missing')
+
+    if optional_objs:
+        a = set(optional_objs)
+        b = set(eds.optional_objects)
+        for i in list(a - b):
+            errors.append(f'0x{i:X} was missing from [OptionalObjects]')
+        for i in list(b - a):
+            errors.append(f'0x{i:X} was in [OptionalObjects], but does not exist')
+    else:
+        errors.append('Section [OptionalObjects] was missing')
+
+    if manufacturer_objs:
+        a = set(manufacturer_objs)
+        b = set(eds.manufacturer_objects)
+        for i in list(a - b):
+            errors.append(f'0x{i:X} was missing from [ManufacturerObjects]')
+        for i in list(b - a):
+            errors.append(f'0x{i:X} was in [ManufacturerObjects], but does not exist')
+    else:
+        errors.append('Section [ManufacturerObjects] was missing')
+
+    rpdo_para_ind = [i for i in eds.indexes if i >= EDS.RPDO_PARA_START and i < EDS.RPDO_PARA_END]
+    tpdo_para_ind = [i for i in eds.indexes if i >= EDS.TPDO_PARA_START and i < EDS.TPDO_PARA_END]
+
+    for i in rpdo_para_ind + tpdo_para_ind:
+        for j in eds[i].subindexes:
+            if j == 0:
+                continue
+
+            try:
+                obj_index, obj_subindex, obj_size = pdo_mapping_fields(eds[i][j].default_value)
+            except ValueError:
+                errors.append(f'PDO mapping value at 0x{i:X} 0x{j:02X} was misformatted, '
+                              f'replacing {eds[i][j].default_value} to 0x00000000')
+                eds[i][j].default_value = '0x00000000'
+                continue
+
+            if obj_index == 0 and obj_subindex == 0 and obj_size == 0:
+                continue
+
+            if isinstance(eds[obj_index], Variable):
+                obj = eds[obj_index]
+            else:
+                obj = eds[obj_index][obj_subindex]
+
+            if obj.data_type.size != obj_size:
+                map_obj = eds[i][j]
+                old = map_obj.default_value
+                map_obj.default_value = map_obj.default_value[:-2] + f'{obj.data_type.size:02X}'
+                new = map_obj.default_value
+                errors.append(f'PDO mapping value at 0x{i:X} 0x{j:02X} had the wrong mapped '
+                              f'object size: {old} -> {new}')
 
     return eds, errors
 
@@ -490,7 +563,7 @@ def _read_device_info(header: str, lines: dict) -> (DeviceInfo, list):
     return device_info, errors
 
 
-def _read_device_commisioning(header: str, lines: dict) -> (DeviceCommissioning, list):
+def _read_device_commissioning(header: str, lines: dict) -> (DeviceCommissioning, list):
     '''
     Read the device commissioning section.
 
@@ -570,7 +643,7 @@ def _read_bool_value(header: str, lines: dict, name: str) -> bool:
     Raises
     ------
     ValueError:
-        Values were mising or misformatted.
+        Values were missing or misformatted.
 
     Returns
     -------
@@ -597,7 +670,7 @@ def _read_int_value(header: str, lines: dict, name: str) -> int:
     Raises
     ------
     ValueError:
-        Value were mising or misformatted.
+        Value were missing or misformatted.
 
     Returns
     -------
@@ -634,7 +707,7 @@ def _read_datetime_value(header: str, lines: dict, time_name: str, date_name: st
     Raises
     ------
     ValueError:
-        Values were mising or misformatted.
+        Values were missing or misformatted.
 
     Returns
     -------
