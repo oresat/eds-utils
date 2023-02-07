@@ -23,8 +23,8 @@ Linux
 
 - Install GTK4 for your distro
 
-  - For Arch based distros:``$ sudo pacman -S gtk4``
-  - For Debian based distros:``$ sudo apt install gtk4``
+  - For Arch based distros:``$ sudo pacman -S gtk4 python-gobject``
+  - For Debian based distros:``$ sudo apt install gtk4 python3-gi``
 
 - Install eds-utils with pip: ``$ pip install eds-utils``
 
