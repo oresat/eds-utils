@@ -100,6 +100,7 @@ class ObjectDictionaryPage(Page):
         label.set_halign(Gtk.Align.START)
         self._obj_parameter_name = Gtk.Entry()
         self._obj_parameter_name.set_max_length(241)
+        self._obj_parameter_name.connect('changed', self._on_parametere_name_changed)
         grid.attach(label, column=0, row=0, width=1, height=1)
         grid.attach(self._obj_parameter_name, column=1, row=0, width=3, height=1)
 
@@ -107,6 +108,7 @@ class ObjectDictionaryPage(Page):
         label.set_halign(Gtk.Align.START)
         self._obj_denotation = Gtk.Entry()
         self._obj_denotation.set_max_length(241)
+        self._obj_denotation.connect('changed', self._on_obj_denotation_changed)
         grid.attach(label, column=0, row=1, width=1, height=1)
         grid.attach(self._obj_denotation, column=1, row=1, width=3, height=1)
 
@@ -126,6 +128,7 @@ class ObjectDictionaryPage(Page):
         access_type_list = Gtk.StringList.new(strings=[i.name for i in AccessType])
         self._obj_access_type.set_model(access_type_list)
         self._obj_access_type.set_selected(0)
+        self._obj_access_type.connect('activate', self._on_obj_access_type_changed)
         grid.attach(label, column=2, row=2, width=1, height=1)
         grid.attach(self._obj_access_type, column=3, row=2, width=1, height=1)
 
@@ -135,8 +138,10 @@ class ObjectDictionaryPage(Page):
         scrolled_window.set_vexpand(True)
         scrolled_window.set_hexpand(True)
         scrolled_window.set_has_frame(True)
-        self._obj_comment = Gtk.TextView()
-        scrolled_window.set_child(self._obj_comment)
+        text_view = Gtk.TextView()
+        self._obj_comment = text_view.get_buffer()
+        self._obj_comment.connect('changed', self._on_obj_comment_changed)
+        scrolled_window.set_child(text_view)
         grid.attach(label, column=0, row=3, width=1, height=5)
         grid.attach(scrolled_window, column=1, row=3, width=3, height=5)
 
@@ -146,6 +151,7 @@ class ObjectDictionaryPage(Page):
         data_type_list = Gtk.StringList.new(strings=[i.name for i in DataType])
         self._obj_data_type.set_model(data_type_list)
         self._obj_data_type.set_selected(0)
+        self._obj_data_type.connect('activate', self._on_obj_data_type_changed)
         grid.attach(label, column=0, row=8, width=1, height=1)
         grid.attach(self._obj_data_type, column=1, row=8, width=1, height=1)
 
@@ -154,24 +160,28 @@ class ObjectDictionaryPage(Page):
         self._obj_pdo_mapping = Gtk.Switch()
         self._obj_pdo_mapping.set_halign(Gtk.Align.START)
         self._obj_pdo_mapping.set_valign(Gtk.Align.CENTER)
+        self._obj_pdo_mapping.connect('activate', self._on_obj_pdo_mapping_changed)
         grid.attach(label, column=2, row=8, width=1, height=1)
         grid.attach(self._obj_pdo_mapping, column=3, row=8, width=1, height=1)
 
         label = Gtk.Label.new('Default Value:')
         label.set_halign(Gtk.Align.START)
         self._obj_default_value = Gtk.Entry()
+        self._obj_default_value.connect('changed', self._on_obj_default_value_changed)
         grid.attach(label, column=0, row=9, width=1, height=1)
         grid.attach(self._obj_default_value, column=1, row=9, width=3, height=1)
 
         label = Gtk.Label.new('Low Limit:')
         label.set_halign(Gtk.Align.START)
         self._obj_low_limit = Gtk.Entry()
+        self._obj_low_limit.connect('changed', self._on_obj_low_limit_changed)
         grid.attach(label, column=0, row=10, width=1, height=1)
         grid.attach(self._obj_low_limit, column=1, row=10, width=1, height=1)
 
         label = Gtk.Label.new('High Limit:')
         label.set_halign(Gtk.Align.START)
         self._obj_high_limit = Gtk.Entry()
+        self._obj_high_limit.connect('changed', self._on_obj_high_limit_changed)
         grid.attach(label, column=2, row=10, width=1, height=1)
         grid.attach(self._obj_high_limit, column=3, row=10, width=1, height=1)
 
@@ -179,50 +189,54 @@ class ObjectDictionaryPage(Page):
         label.set_halign(Gtk.Align.START)
         self._obj_storage_loc = Gtk.DropDown()
         if eds.storage_locations:
-            storage_loc_list = Gtk.StringList.new(strings=eds.storage_locations)
-            self._obj_storage_loc.set_model(storage_loc_list)
+            self._obj_storage_loc.set_model(Gtk.StringList.new(strings=eds.storage_locations))
             self._obj_storage_loc.set_selected(0)
+            self._obj_storage_loc.connect('activate', self._on_obj_storage_loc_changed)
         grid.attach(label, column=0, row=11, width=1, height=1)
         grid.attach(self._obj_storage_loc, column=1, row=11, width=1, height=1)
 
-        button = Gtk.Button(label='Update')
-        button.set_halign(Gtk.Align.END)
-        button.set_valign(Gtk.Align.END)
-        button.connect('clicked', self.on_update_button_clicked)
-        grid.attach(button, column=0, row=12, width=2, height=2)
-
-        button = Gtk.Button(label='Cancel')
-        button.set_halign(Gtk.Align.START)
-        button.set_valign(Gtk.Align.END)
-        button.connect('clicked', self.on_cancel_button_clicked)
-        grid.attach(button, column=2, row=12, width=2, height=2)
-
         self.refresh()
 
-    def on_update_button_clicked(self, button: Gtk.Button):
-        '''Update button callback to save changes the selected object.'''
+    def _on_parametere_name_changed(self, entry: Gtk.Entry):
+        if self._selected_obj:
+            self._selected_obj.parameter_name = entry.get_text()
 
-        if self._selected_obj is None:
-            return
+    def _on_obj_denotation_changed(self, entry: Gtk.Entry):
+        if self._selected_obj:
+            self._selected_obj.denotation = entry.get_text()
 
-        self._eds_changed = True
+    def _on_obj_access_type_changed(self, dropdown: Gtk.DropDown):
+        if self._selected_obj:
+            self._selected_obj.access_type = AccessType[dropdown.get_value()]
 
-        self._selected_obj.parameter_name = self._obj_parameter_name.get_text()
-        buf = self._obj_comment.get_buffer()
-        self._selected_obj.comments = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), False)
-        data_type = self._obj_data_type.get_selected()
-        self._selected_obj.data_type = list(DataType)[data_type]
-        access_type = self._obj_access_type.get_selected()
-        self._selected_obj.access_type = list(AccessType)[access_type]
-        self._selected_obj.default_value = self._obj_default_value.get_text()
-        self._selected_obj.pdo_mapping = self._obj_pdo_mapping.get_state()
-        storage_loc = self._obj_storage_loc.get_selected()
-        self._selected_obj.storage_location = self._eds.storage_locations[storage_loc]
+    def _on_obj_comment_changed(self, buffer: Gtk.TextBuffer):
+        if self._selected_obj:
+            self._selected_obj.comments = buffer.get_text(buffer.get_start_iter(),
+                                                          buffer.get_end_iter(), False)
 
-    def on_cancel_button_clicked(self, button: Gtk.Button):
-        '''Cancel button callback to cancel changes the selected object.'''
+    def _on_obj_data_type_changed(self, dropdown: Gtk.DropDown):
+        if self._selected_obj:
+            self._selected_obj.data_type = DataType[dropdown.get_value()]
 
-        self._load_selection()
+    def _on_obj_pdo_mapping_changed(self, switch: Gtk.Switch):
+        if self._selected_obj:
+            self._selected_obj.pdo_mapping = switch.get_state()
+
+    def _on_obj_default_value_changed(self, entry: Gtk.Entry):
+        if self._selected_obj:
+            self._selected_obj.default_value = entry.get_text()
+
+    def _on_obj_low_limit_changed(self, entry: Gtk.Entry):
+        if self._selected_obj:
+            self._selected_obj.low_limit = entry.get_text()
+
+    def _on_obj_high_limit_changed(self, entry: Gtk.Entry):
+        if self._selected_obj:
+            self._selected_obj.high_limit = entry.get_text()
+
+    def _on_obj_storage_loc_changed(self, dropdown: Gtk.DropDown):
+        if self._selected_obj:
+            self._selected_obj.storage_location = self._eds.storage_location[dropdown.get_value()]
 
     def on_search_entry(self, entry):
         '''Callback on search filter entry for parameter names'''
@@ -232,7 +246,7 @@ class ObjectDictionaryPage(Page):
             self._tree_filter.refilter()
 
     def tree_filter_func(self, model, iter, data) -> bool:
-        '''Callback on refilter to change row visibility
+        '''Callback on refilter to changed row visibility
 
         Return
         ------
@@ -271,7 +285,7 @@ class ObjectDictionaryPage(Page):
         self._obj_denotation.set_text(self._selected_obj.denotation)
         obj_type = self._selected_obj.object_type
         self._obj_type.set_selected(list(ObjectType).index(obj_type))
-        self._obj_comment.get_buffer().set_text(self._selected_obj.comments)
+        self._obj_comment.set_text(self._selected_obj.comments)
         storage_loc = self._selected_obj.storage_location
         if storage_loc:
             self._obj_storage_loc.set_selected(self._eds.storage_locations.index(storage_loc))
@@ -292,7 +306,7 @@ class ObjectDictionaryPage(Page):
                 self._obj_data_type.set_selected(0)
 
     def on_tree_selection_changed(self, selection: Gtk.SelectionModel):
-        '''When value is selected in the treeview, change the current selected object.'''
+        '''When value is selected in the treeview, changed the current selected object.'''
         model, treeiter = selection.get_selected()
 
         if not treeiter:
