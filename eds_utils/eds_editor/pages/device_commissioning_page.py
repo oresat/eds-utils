@@ -70,6 +70,7 @@ class DeviceCommissioningPage(Page):
             column = i % 4  # 0 - 3
             row = i // 4  # 0 or 1
             self._baud_rate_buttons.append(radio_button)
+            radio_button.connect('toggled', self._on_baud_rate_changed)
             grid.attach(radio_button, column=1 + column, row=2 + row, width=1, height=1)
         radio_button.set_active(True)  # 1000 kpbs
 
@@ -89,38 +90,35 @@ class DeviceCommissioningPage(Page):
         grid.attach(label, column=2, row=4, width=1, height=1)
         grid.attach(self._canopen_manager, column=3, row=4, width=1, height=1)
 
-        button = Gtk.Button(label='Update')
-        button.set_halign(Gtk.Align.END)
-        button.set_valign(Gtk.Align.END)
-        button.connect('clicked', self.on_update_button_clicked)
-        grid.attach(button, column=0, row=5, width=2, height=2)
+        self.refresh()
 
-        button = Gtk.Button(label='Cancel')
-        button.set_halign(Gtk.Align.START)
-        button.set_valign(Gtk.Align.END)
-        button.connect('clicked', self.on_cancel_button_clicked)
-        grid.attach(button, column=2, row=5, width=2, height=2)
-
-        # a hack to set all the values from the eds
-        self.on_cancel_button_clicked(None)
-
-    def on_update_button_clicked(self, button: Gtk.Button):
-        '''Update button callback to save changes the device commissioning info.'''
-
+    def _on_node_name_changed(self, entry: Gtk.Entry):
+        self._eds.device_commissioning.node_name = entry.get_text()
         self._eds_changed = True
-        device_comm = self._eds.device_commissioning
-        device_comm.node_name = self._node_name.get_text()
-        device_comm.node_id = int(self._node_id.get_value())
-        device_comm.net_number = int(self._net_number.get_value())
-        device_comm.network_name = self._network_name.get_text()
-        for i in self._baud_rate_buttons:
-            if i.get_active():
-                index = self._baud_rate_buttons.index(i)
-                device_comm.baud_rate = BAUD_RATE[index]
-                break
-        self._baud_rate_buttons[index].set_active(True)
-        device_comm.canopen_manager = self._canopen_manager.get_state()
-        device_comm.lss_serialnumber = int(self._lss_serial_num.get_value())
+
+    def _on_node_id_changed(self, spin: Gtk.SpinButton):
+        self._eds.device_commissioning.node_id = spin.get_value()
+        self._eds_changed = True
+
+    def _on_network_name_changed(self, entry: Gtk.Entry):
+        self._eds.device_commissioning.network_name = entry.get_text()
+        self._eds_changed = True
+
+    def _on_net_number_changed(self, spin: Gtk.SpinButton):
+        self._eds.device_commissioning.net_number = spin.get_value()
+        self._eds_changed = True
+
+    def _on_baud_rate_changed(self, check: Gtk.CheckButton):
+        self._eds.device_commissioning.baud_rate = int(check.get_label()[:-5])
+        self._eds_changed = True
+
+    def _on_lss_serial_number_changed(self, spin: Gtk.SpinButton):
+        self._eds.device_commissioning.lss_serialnumber = spin.get_value()
+        self._eds_changed = True
+
+    def _on_canopen_manager_changed(self, switch: Gtk.Switch):
+        self._eds.device_commissioning.canopen_manager = switch.get_state()
+        self._eds_changed = True
 
     def refresh(self):
         '''Refresh the page'''
@@ -134,11 +132,6 @@ class DeviceCommissioningPage(Page):
         self._baud_rate_buttons[index].set_active(True)
         self._canopen_manager.set_state(device_comm.canopen_manager)
         self._lss_serial_num.set_value(device_comm.lss_serialnumber)
-
-    def on_cancel_button_clicked(self, button: Gtk.Button):
-        '''Cancel button callback to cancel / clear changes the device commissioning info.'''
-
-        self.refresh()
 
     def _on_nodeid_output(self, spin: Gtk.SpinButton) -> bool:
         '''Format the Node ID to be a hex value.'''
