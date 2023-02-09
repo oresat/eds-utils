@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 
@@ -25,4 +26,4 @@ def eds2rst(sys_args=None):
     if args.output:
         write_rst(eds, file_path=args.output)
     else:
-        write_rst(eds)
+        write_rst(eds, file_path=os.path.dirname(os.path.abspath(args.filepath)))

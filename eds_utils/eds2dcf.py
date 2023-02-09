@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 
@@ -44,4 +45,4 @@ def eds2dcf(sys_args=None):
     if args.output:
         write_eds(eds, file_path=args.output, dcf=True)
     else:
-        write_eds(eds, dcf=True)
+        write_eds(eds, file_path=os.path.dirname(os.path.abspath(args.filepath)), dcf=True)

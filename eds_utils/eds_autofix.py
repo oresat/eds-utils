@@ -14,7 +14,7 @@ def eds_autofix(sys_args=None):
     name = 'eds-autofix'
     parser = argparse.ArgumentParser(description=EDS_AUTOFIX_DESCRIPTION, prog=name)
     parser.add_argument('filepath', metavar='FILEPATH', help='file path to EDS/DCF file')
-    parser.add_argument('-s', '--silence', action='store_true', help='silence prints to stderr')
+    parser.add_argument('-s', '--silence', action='store_true', help='silence prints to stdout')
     args = parser.parse_args(sys_args)
 
     try:

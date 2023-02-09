@@ -432,7 +432,8 @@ def write_canopennode_h(eds: EDS, dir_path=''):
     lines.append('#define OD_CNT_HB_CONS 1')
     lines.append('#define OD_CNT_HB_PROD 1')
     lines.append('#define OD_CNT_SDO_SRV 1')
-    lines.append('#define OD_CNT_SDO_CLI 1')
+    if 0x1280 in eds.indexes:
+        lines.append('#define OD_CNT_SDO_CLI 1')
     lines.append(f'#define OD_CNT_RPDO {eds.rpdos}')
     lines.append(f'#define OD_CNT_TPDO {eds.tpdos}')
     lines.append('')

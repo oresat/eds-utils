@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 
@@ -25,4 +26,4 @@ def eds2md(sys_args=None):
     if args.output:
         write_md(eds, file_path=args.output)
     else:
-        write_md(eds)
+        write_md(eds, file_path=os.path.dirname(os.path.abspath(args.filepath)))

@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 
@@ -23,6 +24,6 @@ def eds2c(sys_args=None):
         sys.exit(1)
 
     if args.output:
-        write_canopennode(eds, file_path=args.output)
+        write_canopennode(eds, dir_path=args.output)
     else:
-        write_canopennode(eds)
+        write_canopennode(eds, dir_path=os.path.dirname(os.path.abspath(args.filepath)))
