@@ -44,6 +44,8 @@ class EDSNotebook(Gtk.Notebook):
         self.tpdo_page = PDOPage(self.eds, self.parent_window, 'TPDO')
         self.dc_page = DeviceCommissioningPage(self.eds)
 
+        self._eds_changed_reset()
+
         self.append_page(self.gi_page, Gtk.Label.new('General Info'))
         self.append_page(self.od_page, Gtk.Label.new('Object Dictionary'))
         self.append_page(self.rpdo_page, Gtk.Label.new('RPDOs'))
@@ -72,7 +74,7 @@ class EDSNotebook(Gtk.Notebook):
     def save_eds(self, file_path=''):
         '''Save the eds file'''
 
-        if file_path:
+        if not file_path:
             file_path = self.file_path
 
         write_eds(self.eds, file_path)
@@ -88,7 +90,7 @@ class EDSNotebook(Gtk.Notebook):
     def _save_eds_tmp(self):
         '''Save a tempory eds file'''
 
-        if self.eds_changed:  # only save a temp if something has changed
+        if self.eds_has_changed:  # only save a temp if something has changed
             write_eds(self.eds, self.tmp_file_path)
 
             self._eds_changed_reset()
@@ -102,12 +104,13 @@ class EDSNotebook(Gtk.Notebook):
         return basename(self.file_path)
 
     @property
-    def eds_changed(self) -> bool:
+    def eds_has_changed(self) -> bool:
         '''bool: Flag if the eds file has change and not been saved.'''
 
         ret = False
-        if True in [self.gi_page.eds_changed, self.od_page.eds_changed, self.rpdo_page.eds_changed,
-                    self.tpdo_page.eds_changed, self.dc_page.eds_changed]:
+        if True in [self.gi_page.eds_has_changed, self.od_page.eds_has_changed,
+                    self.rpdo_page.eds_has_changed, self.tpdo_page.eds_has_changed,
+                    self.dc_page.eds_has_changed]:
             ret = True
 
         return ret
