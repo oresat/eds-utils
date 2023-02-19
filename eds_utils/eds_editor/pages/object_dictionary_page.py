@@ -199,8 +199,22 @@ class ObjectDictionaryPage(Page):
 
     def _on_parametere_name_changed(self, entry: Gtk.Entry):
         if self._selected_obj and self._selected_obj.parameter_name != entry.get_text():
-            self._selected_obj.parameter_name = entry.get_text()
+            name = entry.get_text()
+            self._selected_obj.parameter_name = name
             self.eds_changed()
+            for i in self._indexes_store:
+                if self._selected_index != str2int(i[0]):
+                    continue
+
+                if self._selected_subindex is None:
+                    self._indexes_store.set_value(i.iter, 1, name)
+                else:
+                    for j in i.iterchildren():
+                        if self._selected_subindex != str2int(j[0]):
+                            continue
+                        self._indexes_store.set_value(j.iter, 1, name)
+                        break
+                break
 
     def _on_obj_denotation_changed(self, entry: Gtk.Entry):
         if self._selected_obj and self._selected_obj.denotation != entry.get_text():

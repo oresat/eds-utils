@@ -200,7 +200,7 @@ class PDOPage(Page):
 
                 obj = self._eds[obj_index]
                 if isinstance(obj, Variable):
-                    name = f'{obj.parameter_name} - {i:X}'
+                    name = f'{obj.parameter_name} - {obj_index:4X}'
                 else:
                     name = f'{obj.parameter_name} - {obj[obj_subindex].parameter_name} - ' \
                            f'{obj_index:4X}sub{obj_subindex:02X}'

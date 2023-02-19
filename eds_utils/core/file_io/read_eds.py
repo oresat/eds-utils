@@ -126,7 +126,9 @@ def read_eds(file_path: str) -> (EDS, list):
 
             # set subindex 0's storage_location
             sl = eds[index].storage_location
-            eds[index][0].storage_location = sl
+            if eds[index][0].storage_location == '':
+                eds[index][0].storage_location = sl
+
             if sl not in eds.storage_locations:
                 eds.add_storage_location(sl)
 
