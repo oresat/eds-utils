@@ -1,9 +1,7 @@
-from copy import deepcopy
-
 from gi.repository import Gtk
 
 from ...core import DataType, ObjectType, AccessType, str2int
-from ...core.eds import EDS
+from ...core.eds import EDS, EDSError
 from ...core.objects import Variable, Array, Record
 from ..dialogs.errors_dialog import ErrorsDialog
 from ..dialogs.add_object_dialog import AddObjectDialog
@@ -622,25 +620,23 @@ class ObjectDictionaryPage(Page):
 
         new_index, new_subindex = dialog.get_response()
 
-        # add new object to eds
-        if new_subindex is None and self._selected_subindex is None:
-            # copy a index to a new index
-            self._eds[new_index] = deepcopy(self._eds[self._selected_index])
-        elif new_subindex is not None and self._selected_subindex is None:
-            # copy a index to a new subindex
-            self._eds[new_index][new_subindex] = deepcopy(self._eds[self._selected_index])
-        elif new_subindex is None and self._selected_subindex is not None:
-            # copy a subindex to a new index
-            temp = deepcopy(self._eds[self._selected_index][self._selected_subindex])
-            self._eds[new_index] = temp
-        else:
-            # copy a subindex to a new subindex
-            temp = deepcopy(self._eds[self._selected_index][self._selected_subindex])
-            self._eds[new_index][new_subindex] = temp
+        # add copy object in OD
+        try:
+            self._eds.copy_object(self._selected_index, self._selected_subindex, new_index,
+                                  new_subindex)
 
-        # add new object to treeview
-        name = self._selected_obj.parameter_name
-        self.add_treeview_obj(new_index, new_subindex, name)
+            # add new object to treeview
+            name = self._selected_obj.parameter_name
+            self.add_treeview_obj(new_index, new_subindex, name)
+            if self._selected_subindex is None and new_subindex is None and \
+                    not isinstance(self._eds[new_index], Variable):
+                for i in self._eds[new_index].subindexes:
+                    name = self._eds[new_index][i].parameter_name
+                    self.add_treeview_obj(new_index, i, name)
+        except EDSError as e:
+            errors_dialog = ErrorsDialog(self._parent_window)
+            errors_dialog.errors = str(e)
+            errors_dialog.show()
 
     def move_object_on_click(self, button: Gtk.Button):
         '''Callback for the move object to OD button. Opens the move object dialog.'''
@@ -660,27 +656,22 @@ class ObjectDictionaryPage(Page):
 
         new_index, new_subindex = dialog.get_response()
 
-        # move object in eds
-        if new_subindex is None and self._selected_subindex is None:
-            # move a index to a new index
-            self._eds[new_index] = deepcopy(self._eds[self._selected_index])
-            del self._eds[self._selected_index]
-        elif new_subindex is not None and self._selected_subindex is None:
-            # move a index to a new subindex
-            self._eds[new_index][new_subindex] = deepcopy(self._eds[self._selected_index])
-            del self._eds[self._selected_index]
-        elif new_subindex is None and self._selected_subindex is not None:
-            # move a subindex to a new index
-            self._eds[new_index] = \
-                deepcopy(self._eds[self._selected_index][self._selected_subindex])
-            del self._eds[self._selected_index][self._selected_subindex]
-        else:
-            # move a subindex to a new subindex
-            temp = deepcopy(self._eds[self._selected_index][self._selected_subindex])
-            self._eds[new_index][new_subindex] = temp
-            del self._eds[self._selected_index][self._selected_subindex]
+        # add move object in OD
+        try:
+            self._eds.copy_object(self._selected_index, self._selected_subindex, new_index,
+                                  new_subindex, move=True)
 
-        # move object in treeview
-        name = self._selected_obj.parameter_name
-        self.add_treeview_obj(new_index, new_subindex, name)
-        self.remove_treeview_obj(self._selected_index, self._selected_subindex)
+            # move object in treeview
+            name = self._selected_obj.parameter_name
+            self.add_treeview_obj(new_index, new_subindex, name)
+            if self._selected_subindex is None and new_subindex is None and \
+                    not isinstance(self._eds[new_index], Variable):
+                for i in self._eds[new_index].subindexes:
+                    name = self._eds[new_index][i].parameter_name
+                    self.add_treeview_obj(new_index, i, name)
+
+            self.remove_treeview_obj(self._selected_index, self._selected_subindex)
+        except EDSError as e:
+            errors_dialog = ErrorsDialog(self._parent_window)
+            errors_dialog.errors = str(e)
+            errors_dialog.show()

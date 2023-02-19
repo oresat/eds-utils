@@ -64,13 +64,17 @@ class CopyObjectDialog(Gtk.Dialog):
         label = Gtk.Label(label='New Index:')
         label.set_halign(Gtk.Align.START)
         self.index_entry = Gtk.Entry()
-        self.index_entry.set_text('0x1000')
+        self.index_entry.set_text(f'0x{self.index:04X}')
         grid.attach(label, column=0, row=1, width=1, height=1)
         grid.attach(self.index_entry, column=1, row=1, width=1, height=1)
 
         label = Gtk.Label(label='New Subindex (optional):')
         label.set_halign(Gtk.Align.START)
         self.subindex_entry = Gtk.Entry()
+        if self.subindex is not None:
+            self.subindex_entry.set_text(f'0x{self.subindex:02X}')
+        else:
+            self.subindex_entry.set_text(f'0x{0:02X}')
         grid.attach(label, column=2, row=1, width=1, height=1)
         grid.attach(self.subindex_entry, column=3, row=1, width=1, height=1)
 

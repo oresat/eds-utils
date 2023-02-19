@@ -6,6 +6,10 @@ from . import DataType
 from .objects import Variable, Record
 
 
+class EDSError(Exception):
+    '''Error with EDS'''
+
+
 @dataclass
 class FileInfo:
 
@@ -95,7 +99,7 @@ class EDS:
 
     def __setitem__(self, index: int, item):
         if index in self._data:
-            raise ValueError(f'index 0x{index:X} already exist')
+            raise EDSError(f'index 0x{index:X} already exist')
 
         self._data[index] = item
 
@@ -107,12 +111,12 @@ class EDS:
 
         if subindex is None:  # use only index
             if index in self._data:
-                raise ValueError(f'index 0x{index:X} already exist')
+                raise EDSError(f'index 0x{index:X} already exist')
             self._data[index] = item
         elif subindex in self._data:  # use index and subindex
-            raise ValueError(f'subindex 0x{subindex:X} already exist for index 0x{index:X}')
+            raise EDSError(f'subindex 0x{subindex:X} already exist for index 0x{index:X}')
         elif not isinstance(item, Variable):
-            raise ValueError('cannot insert non-Variable into subindex')
+            raise EDSError('cannot insert non-Variable into subindex')
         else:
             self._data[index][subindex] = item
 
@@ -135,7 +139,7 @@ class EDS:
                 break
 
         if next_rpdo == -1:
-            raise ValueError('No more RPDO slots')
+            raise EDSError('No more RPDO slots')
 
         temp = next_rpdo % 4
         if temp == 0:
@@ -174,7 +178,7 @@ class EDS:
                 break
 
         if next_tpdo == -1:
-            raise ValueError('No more TPDO slots')
+            raise EDSError('No more TPDO slots')
 
         temp = next_tpdo % 4
         if temp == 0:
@@ -277,3 +281,37 @@ class EDS:
 
         if storage_location not in self._storage_locations:
             self._storage_locations.append(storage_location)
+
+    def copy_object(self, index: int, subindex: int, new_index: int, new_subindex: int,
+                    move: bool = False):
+        '''Move or copy an object in the OD'''
+
+        if index not in self._data:
+            raise EDSError(f'no object exists at index 0x{index:X}')
+        if subindex is not None and subindex not in self._data[index]:
+            raise EDSError(f'no object exists at index 0x{index:X} subindex 0x{subindex:02X}')
+
+        if new_subindex is None and new_index in self._data:
+            raise EDSError(f'object already exist at index 0x{new_index:X}')
+        if new_subindex is not None:
+            if isinstance(self._data[new_index], Variable):
+                raise EDSError('cannot move an object to a subindex of an Variable')
+            if new_subindex in self._data[new_index]:
+                raise EDSError(f'object already exist at index 0x{new_index:X} subindex '
+                               f'0x{new_subindex:02X}')
+
+        if not isinstance(self._data[index], Variable) and new_subindex is not None:
+            raise EDSError('cannot move a non-Variable to a subindex')
+
+        obj = self._data[index] if subindex is None else self._data[index][subindex]
+
+        if new_subindex is None:
+            self._data[new_index] = obj
+        else:
+            self._eds[new_index][new_subindex] = obj
+
+        if move:
+            if new_subindex is None:
+                del self._data[index]
+            else:
+                del self._eds[index][subindex]
