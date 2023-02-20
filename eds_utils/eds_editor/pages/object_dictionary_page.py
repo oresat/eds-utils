@@ -193,7 +193,17 @@ class ObjectDictionaryPage(Page):
         grid.attach(label, column=0, row=11, width=1, height=1)
         grid.attach(self._obj_storage_loc, column=1, row=11, width=1, height=1)
 
-        self.refresh()
+        # fill tree view with object dictionary data
+        for index in self._eds.indexes:
+            index_str = f'0x{index:X}'
+            index_section = self._eds[index]
+            self._indexes_store.append(None, [index_str, index_section.parameter_name])
+            if index_section.object_type != ObjectType.VAR:
+                for subindex in self._eds[index].subindexes:
+                    subindex_str = f'0x{subindex:X}'
+                    subindex_section = self._eds[index][subindex]
+                    self._indexes_store.append(self._indexes_store[-1].iter,
+                                               [subindex_str, subindex_section.parameter_name])
 
     def _on_parametere_name_changed(self, entry: Gtk.Entry):
         if self._selected_obj:
@@ -382,23 +392,6 @@ class ObjectDictionaryPage(Page):
             self._obj_high_limit.show()
 
         self._load_selection()
-
-    def refresh(self):
-        '''Refresh the page'''
-
-        self._indexes_store.clear()
-
-        # fill tree view with object dictionary data
-        for index in self._eds.indexes:
-            index_str = f'0x{index:X}'
-            index_section = self._eds[index]
-            self._indexes_store.append(None, [index_str, index_section.parameter_name])
-            if index_section.object_type != ObjectType.VAR:
-                for subindex in self._eds[index].subindexes:
-                    subindex_str = f'0x{subindex:X}'
-                    subindex_section = self._eds[index][subindex]
-                    self._indexes_store.append(self._indexes_store[-1].iter,
-                                               [subindex_str, subindex_section.parameter_name])
 
     def add_treeview_obj(self, index: int, subindex: int, name: str):
         '''
