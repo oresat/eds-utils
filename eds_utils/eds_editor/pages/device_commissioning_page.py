@@ -93,39 +93,25 @@ class DeviceCommissioningPage(Page):
         self.refresh()
 
     def _on_node_name_changed(self, entry: Gtk.Entry):
-        if self._eds.device_commissioning.node_name != entry.get_text():
-            self._eds.device_commissioning.node_name = entry.get_text()
-            self.eds_changed()
+        self._eds.device_commissioning.node_name = entry.get_text()
 
     def _on_node_id_changed(self, spin: Gtk.SpinButton):
-        if self._eds.device_commissioning.node_id != spin.get_value():
-            self._eds.device_commissioning.node_id = spin.get_value()
-            self.eds_changed()
+        self._eds.device_commissioning.node_id = spin.get_value()
 
     def _on_network_name_changed(self, entry: Gtk.Entry):
-        if self._eds.device_commissioning.network_name != entry.get_text():
-            self._eds.device_commissioning.network_name = entry.get_text()
-            self.eds_changed()
+        self._eds.device_commissioning.network_name = entry.get_text()
 
     def _on_net_number_changed(self, spin: Gtk.SpinButton):
-        if self._eds.device_commissioning.net_number != spin.get_value():
-            self._eds.device_commissioning.net_number = spin.get_value()
-            self.eds_changed()
+        self._eds.device_commissioning.net_number = spin.get_value()
 
     def _on_baud_rate_changed(self, check: Gtk.CheckButton):
-        if self._eds.device_commissioning.baud_rate != int(check.get_label()[:-5]):
-            self._eds.device_commissioning.baud_rate = int(check.get_label()[:-5])
-            self.eds_changed()
+        self._eds.device_commissioning.baud_rate = int(check.get_label()[:-5])
 
     def _on_lss_serial_number_changed(self, spin: Gtk.SpinButton):
-        if self._eds.device_commissioning.lss_serialnumber != spin.get_value():
-            self._eds.device_commissioning.lss_serialnumber = spin.get_value()
-            self.eds_changed()
+        self._eds.device_commissioning.lss_serialnumber = spin.get_value()
 
     def _on_canopen_manager_changed(self, switch: Gtk.Switch):
-        if self._eds.device_commissioning.canopen_manager != switch.get_state():
-            self._eds.device_commissioning.canopen_manager = switch.get_state()
-            self.eds_changed()
+        self._eds.device_commissioning.canopen_manager = switch.get_state()
 
     def refresh(self):
         '''Refresh the page'''

@@ -50,6 +50,27 @@ class Record:
             )
         }
 
+    def __eq__(self, other) -> bool:
+
+        if self.parameter_name != other.parameter_name:
+            return False
+        if self.denotation != other.denotation:
+            return False
+        if self.comments != other.comments:
+            return False
+        if self.object_type != other.object_type:
+            return False
+        if self.storage_location != other.storage_location:
+            return False
+        if self.subindexes != other.subindexes:
+            return False
+
+        for subindex in self.subindexes:
+            if self[subindex] != other[subindex]:
+                return False
+
+        return True
+
     def __len__(self) -> int:
         return len(self._data)
 
@@ -120,6 +141,16 @@ class Array(Record):
         super().__init__(parameter_name)
         self.object_type = ObjectType.ARRAY
         self._data_type = data_type
+
+    def __eq__(self, other) -> bool:
+
+        if not super().__eq__(other):
+            return False
+
+        if self.data_type != other.data_type:
+            return False
+
+        return True
 
     def __setitem__(self, subindex: int, variable: Variable):
         '''Add a subindex to the array'''

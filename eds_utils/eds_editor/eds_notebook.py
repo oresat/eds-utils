@@ -1,5 +1,6 @@
 from os import remove
 from os.path import basename
+from copy import deepcopy
 
 from gi.repository import Gtk, GLib
 
@@ -33,6 +34,8 @@ class EDSNotebook(Gtk.Notebook):
         self.tmp_file_path = file_path + '.tmp'
         self.eds, errors = read_eds(self.file_path)
 
+        self.eds_bak = deepcopy(self.eds)
+
         if errors:
             errors_dialog = ErrorsDialog(self.parent_window)
             errors_dialog.errors = errors
@@ -43,8 +46,6 @@ class EDSNotebook(Gtk.Notebook):
         self.rpdo_page = PDOPage(self.eds, self.parent_window, 'RPDO')
         self.tpdo_page = PDOPage(self.eds, self.parent_window, 'TPDO')
         self.dc_page = DeviceCommissioningPage(self.eds)
-
-        self._eds_changed_reset()
 
         self.append_page(self.gi_page, Gtk.Label.new('General Info'))
         self.append_page(self.od_page, Gtk.Label.new('Object Dictionary'))
@@ -62,15 +63,6 @@ class EDSNotebook(Gtk.Notebook):
 
         page.refresh()
 
-    def _eds_changed_reset(self):
-        '''Reset the eds changed flags'''
-
-        self.gi_page.eds_changed_reset()
-        self.od_page.eds_changed_reset()
-        self.rpdo_page.eds_changed_reset()
-        self.tpdo_page.eds_changed_reset()
-        self.dc_page.eds_changed_reset()
-
     def save_eds(self, file_path=''):
         '''Save the eds file'''
 
@@ -79,7 +71,7 @@ class EDSNotebook(Gtk.Notebook):
 
         write_eds(self.eds, file_path)
 
-        self._eds_changed_reset()
+        self.eds_bak = deepcopy(self.eds)
 
         # remove temp
         try:
@@ -90,10 +82,11 @@ class EDSNotebook(Gtk.Notebook):
     def _save_eds_tmp(self):
         '''Save a tempory eds file'''
 
-        if self.eds_has_changed:  # only save a temp if something has changed
+        if self.eds != self.eds_bak:  # only save a temp if something has changed
+            print('saving tmp')
             write_eds(self.eds, self.tmp_file_path)
 
-            self._eds_changed_reset()
+            self.eds_bak = deepcopy(self.eds)
 
         return True
 

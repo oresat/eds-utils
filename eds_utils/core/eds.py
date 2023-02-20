@@ -23,6 +23,18 @@ class FileInfo:
     modification_dt: datetime = datetime.now()
     modified_by: str = ''
 
+    def __eq__(self, other) -> bool:
+        # ignore file_name, modification_dt, and modified_by
+
+        if self.file_version != other.file_version \
+                or self.file_revision != other.file_revision \
+                or self.description != other.description \
+                or self.creation_dt != other.creation_dt \
+                or self.created_by != other.created_by:
+            return False
+
+        return True
+
 
 @dataclass
 class DeviceInfo:
@@ -52,6 +64,25 @@ class DeviceInfo:
     num_of_tpdo: int = 0
     lss_supported: bool = False
 
+    def __eq__(self, other) -> bool:
+        if self.vendor_name != other.vendor_name \
+                or self.vendor_number != other.vendor_number \
+                or self.product_name != other.product_name \
+                or self.product_number != other.product_number \
+                or self.order_code != other.order_code \
+                or self.baud_rate != other.baud_rate \
+                or self.simple_boot_up_master != other.simple_boot_up_master \
+                or self.simple_boot_up_slave != other.simple_boot_up_slave \
+                or self.grandularity != other.grandularity \
+                or self.dynamic_channel_supperted != other.dynamic_channel_supperted \
+                or self.group_messaging != other.group_messaging \
+                or self.num_of_rpdo != other.num_of_rpdo \
+                or self.num_of_tpdo != other.num_of_tpdo \
+                or self.lss_supported != other.lss_supported:
+            return False
+
+        return True
+
 
 @dataclass
 class DeviceCommissioning:
@@ -63,6 +94,18 @@ class DeviceCommissioning:
     network_name: str = ''
     canopen_manager: bool = False
     lss_serialnumber: int = 0
+
+    def __eq__(self, other) -> bool:
+        if self.node_id != other.node_id \
+                or self.node_name != other.node_name \
+                or self.baud_rate != other.baud_rate \
+                or self.net_number != other.net_number \
+                or self.network_name != other.network_name \
+                or self.canopen_manager != other.canopen_manager \
+                or self.lss_serialnumber != other.lss_serialnumber:
+            return False
+
+        return True
 
 
 class EDS:
@@ -90,6 +133,21 @@ class EDS:
         self.comment = ''
         self.canopennode = False  # flag for canopennode eds/dcf
         self._storage_locations = []
+
+    def __eq__(self, other) -> bool:
+        if self.indexes != other.indexes \
+                or self.file_info != other.file_info \
+                or self.device_info != other.device_info \
+                or self.device_commissioning != other.device_commissioning \
+                or self.comment != other.comment \
+                or self.canopennode != other.canopennode:
+            return False
+
+        for i in self.indexes:
+            if self[i] != other[i]:
+                return False
+
+        return True
 
     def __len__(self):
         return len(self._data)

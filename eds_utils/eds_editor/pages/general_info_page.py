@@ -172,7 +172,7 @@ class GeneralInfoPage(Page):
         switch.set_halign(Gtk.Align.START)
         switch.set_valign(Gtk.Align.CENTER)
         switch.set_active(device_info.simple_boot_up_master)
-        switch.connect('activate', self._on_simple_boot_up_master_changed)
+        switch.connect('state-set', self._on_simple_boot_up_master_changed)
         grid.attach(label, column=0, row=4, width=1, height=1)
         grid.attach(switch, column=1, row=4, width=1, height=1)
 
@@ -182,7 +182,7 @@ class GeneralInfoPage(Page):
         switch.set_halign(Gtk.Align.START)
         switch.set_valign(Gtk.Align.CENTER)
         switch.set_active(device_info.simple_boot_up_slave)
-        switch.connect('activate', self._on_simple_boot_up_slave_changed)
+        switch.connect('state-set', self._on_simple_boot_up_slave_changed)
         grid.attach(label, column=0, row=5, width=1, height=1)
         grid.attach(switch, column=1, row=5, width=1, height=1)
 
@@ -203,7 +203,7 @@ class GeneralInfoPage(Page):
         switch.set_halign(Gtk.Align.START)
         switch.set_valign(Gtk.Align.CENTER)
         switch.set_active(device_info.dynamic_channel_supperted)
-        switch.connect('activate', self._on_dynamic_channel_support_changed)
+        switch.connect('state-set', self._on_dynamic_channel_support_changed)
         grid.attach(label, column=0, row=7, width=1, height=1)
         grid.attach(switch, column=1, row=7, width=1, height=1)
 
@@ -213,7 +213,7 @@ class GeneralInfoPage(Page):
         switch.set_halign(Gtk.Align.START)
         switch.set_valign(Gtk.Align.CENTER)
         switch.set_active(device_info.group_messaging)
-        switch.connect('activate', self._on_group_messaging_changed)
+        switch.connect('state-set', self._on_group_messaging_changed)
         grid.attach(label, column=0, row=8, width=1, height=1)
         grid.attach(switch, column=1, row=8, width=1, height=1)
 
@@ -223,7 +223,7 @@ class GeneralInfoPage(Page):
         switch.set_halign(Gtk.Align.START)
         switch.set_valign(Gtk.Align.CENTER)
         switch.set_active(device_info.lss_supported)
-        switch.connect('activate', self._on_lss_supported_changed)
+        switch.connect('state-set', self._on_lss_supported_changed)
         grid.attach(label, column=0, row=9, width=1, height=1)
         grid.attach(switch, column=1, row=9, width=1, height=1)
 
@@ -259,71 +259,43 @@ class GeneralInfoPage(Page):
         self._modification_dt.set_text(datetime.now().strftime(self.DT_FORMAT))
 
     def _on_file_version_changed(self, spin: Gtk.SpinButton):
-        if self._eds.file_info != spin.get_value():
-            self._eds.file_info = spin.get_value()
-            self.eds_changed()
+        self._eds.file_info.file_version = spin.get_value()
 
     def _on_file_revision_changed(self, spin: Gtk.SpinButton):
-        if self._eds.file_revision != spin.get_value():
-            self._eds.file_revision = spin.get_value()
-            self.eds_changed()
+        self._eds.file_info.file_revision = spin.get_value()
 
     def _on_description_changed(self, entry: Gtk.Entry):
-        if self._eds.file_info.description != entry.get_text():
-            self._eds.file_info.description = entry.get_text()
-            self.eds_changed()
+        self._eds.file_info.description = entry.get_text()
 
     def _on_vendor_name_changed(self, entry: Gtk.Entry):
-        if self._eds.device_info.vendor_name != entry.get_text():
-            self._eds.device_info.vendor_name = entry.get_text()
-            self.eds_changed()
+        self._eds.device_info.vendor_name = entry.get_text()
 
     def _on_vendor_number_changed(self, spin: Gtk.SpinButton):
-        if self._eds.device_info.vendor_number != spin.get_value():
-            self._eds.device_info.vendor_number = spin.get_value()
-            self.eds_changed()
+        self._eds.device_info.vendor_number = spin.get_value()
 
     def _on_product_name_changed(self, entry: Gtk.Entry):
-        if self._eds.device_info.product_name != entry.get_text():
-            self._eds.device_info.product_name = entry.get_text()
-            self.eds_changed()
+        self._eds.device_info.product_name = entry.get_text()
 
     def _on_product_number_changed(self, spin: Gtk.SpinButton):
-        if self._eds.device_info.product_number != spin.get_value():
-            self._eds.device_info.product_number = spin.get_value()
-            self.eds_changed()
+        self._eds.device_info.product_number = spin.get_value()
 
     def _on_revision_number_changed(self, spin: Gtk.SpinButton):
-        if self._eds.device_info.revision_number != spin.get_value():
-            self._eds.device_info.revision_number = spin.get_value()
-            self.eds_changed()
+        self._eds.device_info.revision_number = spin.get_value()
 
     def _on_order_code_changed(self, entry: Gtk.Entry):
-        if self._eds.device_info.order_code != entry.get_text():
-            self._eds.device_info.order_code = entry.get_text()
-            self.eds_changed()
+        self._eds.device_info.order_code = entry.get_text()
 
-    def _on_simple_boot_up_master_changed(self, switch: Gtk.Switch):
-        if self._eds.device_info.simple_boot_up_master != switch.get_value():
-            self._eds.device_info.simple_boot_up_master = switch.get_value()
-            self.eds_changed()
+    def _on_simple_boot_up_master_changed(self, switch: Gtk.Switch, state: bool):
+        self._eds.device_info.simple_boot_up_master = state
 
-    def _on_simple_boot_up_slave_changed(self, switch: Gtk.Switch):
-        if self._eds.device_info.simple_boot_up_slave != switch.get_value():
-            self._eds.device_info.simple_boot_up_slave = switch.get_value()
-            self.eds_changed()
+    def _on_simple_boot_up_slave_changed(self, switch: Gtk.Switch, state: bool):
+        self._eds.device_info.simple_boot_up_slave = state
 
-    def _on_dynamic_channel_support_changed(self, switch: Gtk.Switch):
-        if self._eds.device_info.dynamic_channel_supperted != switch.get_value():
-            self._eds.device_info.dynamic_channel_supperted = switch.get_value()
-            self.eds_changed()
+    def _on_dynamic_channel_support_changed(self, switch: Gtk.Switch, state: bool):
+        self._eds.device_info.dynamic_channel_supperted = state
 
-    def _on_group_messaging_changed(self, switch: Gtk.Switch):
-        if self._eds.device_info.group_messaging != switch.get_value():
-            self._eds.device_info.group_messaging = switch.get_value()
-            self.eds_changed()
+    def _on_group_messaging_changed(self, switch: Gtk.Switch, state: bool):
+        self._eds.device_info.group_messaging = state
 
-    def _on_lss_supported_changed(self, switch: Gtk.Switch):
-        if self._eds.device_info.lss_supported != switch.get_value():
-            self._eds.device_info.lss_supported = switch.get_value()
-            self.eds_changed()
+    def _on_lss_supported_changed(self, switch: Gtk.Switch, state: bool):
+        self._eds.device_info.lss_supported = state

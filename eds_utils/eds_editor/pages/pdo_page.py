@@ -252,7 +252,6 @@ class PDOPage(Page):
             new_value += '+$NODEID'
 
         self._eds[index][1].default_value = new_value
-        self.eds_changed()
 
     def _on_nodeid_toggled(self, check: Gtk.CheckButton):
         index = self._comm_start + self._get_index(check)
@@ -264,7 +263,6 @@ class PDOPage(Page):
             value = value[:-8]
 
         self._eds[index][1].default_value = value
-        self.eds_changed()
 
     def _on_valid_toggled(self, check: Gtk.CheckButton):
         index = self._comm_start + self._get_index(check)
@@ -279,7 +277,6 @@ class PDOPage(Page):
         value_list[2] = f'{raw:X}'
 
         self._eds[index][1].default_value = ''.join(value_list)
-        self.eds_changed()
 
     def _on_rtr_toggled(self, check: Gtk.CheckButton):
         index = self._comm_start + self._get_index(check)
@@ -294,27 +291,22 @@ class PDOPage(Page):
         value_list[2] = f'{raw:X}'
 
         self._eds[index][1].default_value = ''.join(value_list)
-        self.eds_changed()
 
     def _on_trans_changed(self, dropdown: Gtk.DropDown, flag: Gtk.StateFlags):
         index = self._comm_start + self._get_index(dropdown)
         self._eds[index][2].default_value = str(dropdown.get_selected())
-        self.eds_changed()
 
     def _on_inhibit_changed(self, spin: Gtk.SpinButton):
         index = self._comm_start + self._get_index(spin)
         self._eds[index][3].default_value = str(int(spin.get_value()))
-        self.eds_changed()
 
     def _on_event_changed(self, spin: Gtk.SpinButton):
         index = self._comm_start + self._get_index(spin)
         self._eds[index][5].default_value = str(int(spin.get_value()))
-        self.eds_changed()
 
     def _on_sync_changed(self, spin: Gtk.SpinButton):
         index = self._comm_start + self._get_index(spin)
         self._eds[index][6].default_value = str(int(spin.get_value()))
-        self.eds_changed()
 
     def _on_add_clicked(self, button: Gtk.Button):
 
@@ -327,7 +319,6 @@ class PDOPage(Page):
     def add_mapped_object_response(self, dialog: Gtk.Dialog, response: int):
         '''Parses the response to the add mapped object dialog.'''
 
-        self.eds_changed()
         self.refresh()
 
     def _on_remove_clicked(self, button: Gtk.Button):
@@ -337,7 +328,6 @@ class PDOPage(Page):
         for subindex in range(len(self._eds[index]) - 1, 0, -1):
             if self._eds[index][subindex].default_value != '0x00000000':
                 self._eds[index][subindex].default_value = '0x00000000'
-                self.eds_changed()
                 break
 
         self.refresh()

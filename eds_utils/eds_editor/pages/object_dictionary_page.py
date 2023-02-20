@@ -196,10 +196,9 @@ class ObjectDictionaryPage(Page):
         self.refresh()
 
     def _on_parametere_name_changed(self, entry: Gtk.Entry):
-        if self._selected_obj and self._selected_obj.parameter_name != entry.get_text():
+        if self._selected_obj:
             name = entry.get_text()
             self._selected_obj.parameter_name = name
-            self.eds_changed()
             for i in self._indexes_store:
                 if self._selected_index != str2int(i[0]):
                     continue
@@ -215,58 +214,49 @@ class ObjectDictionaryPage(Page):
                 break
 
     def _on_obj_denotation_changed(self, entry: Gtk.Entry):
-        if self._selected_obj and self._selected_obj.denotation != entry.get_text():
+        if self._selected_obj:
             self._selected_obj.denotation = entry.get_text()
-            self.eds_changed()
 
     def _on_obj_access_type_changed(self, dropdown: Gtk.DropDown):
         access_type = AccessType[dropdown.get_value()]
-        if self._selected_obj and self._selected_obj.access_type != access_type:
+        if self._selected_obj:
             self._selected_obj.access_type = access_type
-            self.eds_changed()
 
     def _on_obj_comment_changed(self, buffer: Gtk.TextBuffer):
         text = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), False)
-        if self._selected_obj and self._selected_obj.comments != text:
+        if self._selected_obj:
             self._selected_obj.comments = text
-            self.eds_changed()
 
     def _on_obj_data_type_changed(self, dropdown: Gtk.DropDown):
         data_type = DataType[dropdown.get_value()]
-        if self._selected_obj and self._selected_obj.data_type != data_type:
+        if self._selected_obj:
             self._selected_obj.data_type = data_type
-            self.eds_changed()
 
     def _on_obj_pdo_mapping_changed(self, switch: Gtk.Switch):
         state = switch.get_state()
-        if self._selected_obj and self._selected_obj.pdo_mapping != state:
+        if self._selected_obj:
             self._selected_obj.pdo_mapping = state
-            self.eds_changed()
 
     def _on_obj_default_value_changed(self, entry: Gtk.Entry):
         text = entry.get_text()
-        if self._selected_obj and self._selected_obj.default_value != text:
+        if self._selected_obj:
             self._selected_obj.default_value = text
-            self.eds_changed()
 
     def _on_obj_low_limit_changed(self, entry: Gtk.Entry):
         text = entry.get_text()
-        if self._selected_obj and self._selected_obj.low_limit != text:
+        if self._selected_obj:
             self._selected_obj.low_limit = text
-            self.eds_changed()
 
     def _on_obj_high_limit_changed(self, entry: Gtk.Entry):
         text = entry.get_text()
-        if self._selected_obj and self._selected_obj.high_limit != text:
+        if self._selected_obj:
             self._selected_obj.high_limit = text
-            self.eds_changed()
 
     def _on_obj_storage_loc_changed(self, dropdown: Gtk.DropDown):
         if self._eds.storage_locations:
             storage_location = self._eds.storage_locations[dropdown.get_value()]
-            if self._selected_obj and self._selected_obj.storage_location != storage_location:
+            if self._selected_obj:
                 self._selected_obj.storage_location = storage_location
-                self.eds_changed()
 
     def on_search_entry(self, entry):
         '''Callback on search filter entry for parameter names'''
@@ -424,7 +414,6 @@ class ObjectDictionaryPage(Page):
             The name of the new object.
         '''
 
-        self.eds_changed()
         index_str = f'0x{index:X}'
 
         index_found = False
@@ -480,8 +469,6 @@ class ObjectDictionaryPage(Page):
             The subindex of the object to remove.
         '''
 
-        self.eds_changed()
-
         for i in self._indexes_store:
             if index == str2int(i[0]):
                 if self._selected_subindex is None:  # remove index
@@ -508,8 +495,6 @@ class ObjectDictionaryPage(Page):
             The name of the new object.
         '''
 
-        self.eds_changed()
-
         for i in self._indexes_store:
             if index == str2int(i[0]):
                 if self._selected_subindex is None:  # remove index
@@ -531,8 +516,6 @@ class ObjectDictionaryPage(Page):
 
     def add_treeview_object_response(self, dialog: Gtk.Dialog, response: int):
         '''Parses the response to the add object dialog.'''
-
-        self.eds_changed()
 
         new_index, new_subindex, new_obj_type = dialog.get_response()
 
@@ -594,8 +577,6 @@ class ObjectDictionaryPage(Page):
         if self._selected_index not in self._eds.indexes:
             return  # nothing to delete
 
-        self.eds_changed()
-
         # remove from od
         if self._selected_subindex is None:
             del self._eds[self._selected_index]
@@ -615,8 +596,6 @@ class ObjectDictionaryPage(Page):
 
     def copy_treeview_object_response(self, dialog: Gtk.Dialog, response: int):
         '''Parses the response to the copy object dialog..'''
-
-        self.eds_changed()
 
         new_index, new_subindex = dialog.get_response()
 
@@ -651,8 +630,6 @@ class ObjectDictionaryPage(Page):
 
     def move_treeview_object_response(self, dialog: Gtk.Dialog, response: int):
         '''Parses the response to the move object dialog..'''
-
-        self.eds_changed()
 
         new_index, new_subindex = dialog.get_response()
 
