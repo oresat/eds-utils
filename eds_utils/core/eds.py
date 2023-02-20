@@ -159,6 +159,9 @@ class EDS:
         if index in self._data:
             raise EDSError(f'index 0x{index:X} already exist')
 
+        if item.storage_location == '' and self._storage_locations:
+            item.storage_location = self._storage_locations[0]
+
         self._data[index] = item
 
     def __delitem__(self, index: int):
@@ -167,11 +170,14 @@ class EDS:
     def insert(self, index: int, subindex: int, item):
         '''Insert a object into the object dictionary'''
 
-        if subindex is None:  # use only index
+        if subindex is None:
             if index in self._data:
                 raise EDSError(f'index 0x{index:X} already exist')
             self._data[index] = item
-        elif subindex in self._data:  # use index and subindex
+        elif index not in self._data:
+            raise EDSError(f'cannot insert subindex 0x{subindex:X} for index 0x{index:X}, as that '
+                           'index does not exist')
+        elif subindex in self._data[index].subindexes:
             raise EDSError(f'subindex 0x{subindex:X} already exist for index 0x{index:X}')
         elif not isinstance(item, Variable):
             raise EDSError('cannot insert non-Variable into subindex')
