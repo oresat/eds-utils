@@ -7,8 +7,8 @@ from .. import ObjectType, DataType, AccessType
 from ..eds import EDS
 from ..objects import Variable
 
-_SKIP_INDEXES = [0x1F81, 0x1F82]
-'''CANopenNode skips the data for theses for some reason'''
+_SKIP_INDEXES = [0x1F81, 0x1F82, 0x1F89]
+'''CANopenNode skips the data (it just set to NULL) for these indexes for some reason'''
 
 DATA_TYPE_STR = [
     DataType.VISIBLE_STRING,
@@ -135,7 +135,8 @@ def attr_lines(eds: EDS, index: int) -> list:
         else:
             line += f'{default_value},'
 
-        lines.append(line)
+        if index not in _SKIP_INDEXES:
+            lines.append(line)
     elif obj.object_type == ObjectType.ARRAY:
         name = camel_case(obj.parameter_name)
         lines.append(f'{INDENT4}.x{index:X}_{name}_sub0 = {obj[0].default_value},')
@@ -232,7 +233,7 @@ def _var_attr_flags(var: Variable) -> str:
 
     if var.data_type in DATA_TYPE_STR:
         attr_str += ' | ODA_STR'
-    elif (var.data_type // 8) > 1:
+    elif (var.data_type.size // 8) > 1:
         attr_str += ' | ODA_MB'
 
     return attr_str
@@ -250,7 +251,9 @@ def obj_lines(eds: EDS, index) -> list:
     if obj.object_type == ObjectType.VAR:
         st_loc = obj.storage_location
 
-        if obj.data_type == DataType.DOMAIN:
+        if index in _SKIP_INDEXES:
+            lines.append(f'{INDENT8}.dataOrig = NULL,')
+        elif obj.data_type == DataType.DOMAIN:
             lines.append(f'{INDENT8}.dataOrig = NULL,')
         elif obj.data_type in DATA_TYPE_STR or obj.data_type == DataType.OCTET_STRING:
             lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
@@ -276,8 +279,11 @@ def obj_lines(eds: EDS, index) -> list:
 
         length = _var_data_type_len(obj[1])
         lines.append(f'{INDENT8}.dataElementLength = {length},')
-        if length > 0 and length <= 8:
-            lines.append(f'{INDENT8}.dataElementSizeof = sizeof(uint{8 * length}_t)')
+        c_name = DATA_TYPE_C_TYPES[obj.data_type]
+        if obj.data_type == DataType.OCTET_STRING:
+            lines.append(f'{INDENT8}.dataElementSizeof = sizeof({c_name}[{length}])')
+        else:
+            lines.append(f'{INDENT8}.dataElementSizeof = sizeof({c_name})')
     else:
         for i in obj.subindexes:
             st_loc = obj.storage_location
