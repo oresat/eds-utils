@@ -83,7 +83,6 @@ class EDSNotebook(Gtk.Notebook):
         '''Save a tempory eds file'''
 
         if self.eds != self.eds_bak:  # only save a temp if something has changed
-            print('saving tmp')
             write_eds(self.eds, self.tmp_file_path)
 
             self.eds_bak = deepcopy(self.eds)

@@ -2,7 +2,7 @@
 
 from os.path import basename, splitext
 
-from .. import BAUD_RATE, ObjectType, AccessType
+from .. import BAUD_RATE, ObjectType, AccessType, DataType
 from ..objects import Variable, Array, Record
 from ..eds import EDS
 
@@ -165,7 +165,12 @@ def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False,
     else:
         lines.append(f'AccessType={variable.access_type.to_str()}')
     if variable.default_value:  # optional
-        lines.append(f'DefaultValue={variable.default_value}')
+        if variable.data_type == DataType.OCTET_STRING:
+            value_ns = variable.default_value.replace(' ', '')
+            tmp = [value_ns[i: i + 2] for i in range(0, len(value_ns), 2)]
+            lines.append(f'DefaultValue={tmp}')
+        else:
+            lines.append(f'DefaultValue={variable.default_value}')
     if variable.pdo_mapping:  # optional
         lines.append(f'PDOMapping={int(variable.pdo_mapping)}')
     if variable.low_limit:  # optional

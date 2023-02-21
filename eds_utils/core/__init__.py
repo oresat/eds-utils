@@ -77,7 +77,7 @@ class DataType(IntEnum):
 
     @property
     def size(self):
-        '''Get data size in bits (dyanmic types like DOMAIN, VISIBLE_STRING will return 0)'''
+        '''Get data size in bits (dynamic types like DOMAIN, VISIBLE_STRING, etc will return 0)'''
         size = 0
 
         if self.value in [DataType.BOOLEAN, DataType.INTEGER8, DataType.UNSIGNED8]:

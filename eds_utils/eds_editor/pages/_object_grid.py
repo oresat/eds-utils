@@ -1,3 +1,5 @@
+import math as m
+
 from gi.repository import Gtk
 
 from ...core.eds import EDS
@@ -14,6 +16,8 @@ class ObjectGrid(Gtk.Grid):
 
         self._eds = eds
         self._parameter_name_cb = parameter_name_cb
+        self._index = None
+        self._subindex = None
 
         label = Gtk.Label.new('Parameter Name:')
         label.set_halign(Gtk.Align.START)
@@ -88,7 +92,12 @@ class ObjectGrid(Gtk.Grid):
         self._obj_default_value = Gtk.Entry()
         self._obj_default_value.connect('changed', self._on_obj_default_value_changed)
         self.attach(label, column=0, row=9, width=1, height=1)
-        self.attach(self._obj_default_value, column=1, row=9, width=3, height=1)
+        self.attach(self._obj_default_value, column=1, row=9, width=2, height=1)
+
+        self._obj_default_value_len_label = Gtk.Label.new('(Length: 0)')
+        self._obj_default_value_len_label.set_halign(Gtk.Align.START)
+        self._obj_default_value_len_label.hide()
+        self.attach(self._obj_default_value_len_label, column=3, row=9, width=1, height=1)
 
         label = Gtk.Label.new('Low Limit:')
         label.set_halign(Gtk.Align.START)
@@ -118,17 +127,18 @@ class ObjectGrid(Gtk.Grid):
     def load_object(self, index: int, subindex: int = None):
         '''When value is selected in the treeview, changed the current selected object.'''
 
+        self._index = index
+        self._subindex = subindex
+        self._selected_obj = self._eds[index] if subindex is None else self._eds[index][subindex]
+
         # reset these
         self._obj_data_type.set_sensitive(True)
         self._obj_storage_loc.set_sensitive(True)
-        self._obj_default_value.set_sensitive(True)
+        self._obj_default_value_len_label.hide()
 
         if subindex is None:
-            self._selected_obj = self._eds[index]
             self._obj_data_type.set_sensitive(False)
-            self._obj_default_value.set_sensitive(False)
         elif self._eds[index].object_type == ObjectType.ARRAY:
-            self._selected_obj = self._eds[index][subindex]
             self._obj_storage_loc.set_sensitive(False)
             self._obj_data_type.set_sensitive(False)
 
@@ -147,12 +157,19 @@ class ObjectGrid(Gtk.Grid):
             self._obj_low_limit.hide()
             self._obj_high_limit.hide()
         else:
+            if subindex == 0:
+                self._obj_default_value.set_sensitive(False)
+            else:
+                self._obj_default_value.set_sensitive(True)
             self._obj_data_type.show()
             self._obj_access_type.show()
             self._obj_pdo_mapping.show()
             self._obj_default_value.show()
             self._obj_low_limit.show()
             self._obj_high_limit.show()
+            if self._selected_obj.data_type in [DataType.VISIBLE_STRING, DataType.OCTET_STRING,
+                                                DataType.UNICODE_STRING]:
+                self._obj_default_value_len_label.show()
 
         self._obj_parameter_name.set_text(self._selected_obj.parameter_name)
         self._obj_denotation.set_text(self._selected_obj.denotation)
@@ -203,6 +220,11 @@ class ObjectGrid(Gtk.Grid):
         data_type = DataType[dropdown.get_value()]
         if self._selected_obj:
             self._selected_obj.data_type = data_type
+            if self._selected_obj.data_type in [DataType.VISIBLE_STRING, DataType.OCTET_STRING,
+                                                DataType.UNICODE_STRING]:
+                self._obj_default_value_len_label.show()
+            else:
+                self._obj_default_value_len_label.hide()
 
     def _on_obj_pdo_mapping_changed(self, switch: Gtk.Switch):
         state = switch.get_state()
@@ -213,6 +235,12 @@ class ObjectGrid(Gtk.Grid):
         text = entry.get_text()
         if self._selected_obj:
             self._selected_obj.default_value = text
+            if self._selected_obj.data_type in [DataType.VISIBLE_STRING, DataType.UNICODE_STRING]:
+                length = len(text)
+                self._obj_default_value_len_label.set_text(f'(Length: {length + 1})')
+            elif self._selected_obj.data_type == DataType.OCTET_STRING:
+                length = m.ceil(len(text.replace(' ', '')) / 2)
+                self._obj_default_value_len_label.set_text(f'(Length: {length})')
 
     def _on_obj_low_limit_changed(self, entry: Gtk.Entry):
         text = entry.get_text()

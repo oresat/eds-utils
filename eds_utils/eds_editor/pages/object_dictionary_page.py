@@ -178,7 +178,6 @@ class ObjectDictionaryPage(Page):
             self._selected_obj = self._eds[index][subindex]
             self._selected_index = index
             self._selected_subindex = subindex
-            self._obj_storage_loc.set_sensitive(False)
 
         self._object_grid.load_object(self._selected_index, self._selected_subindex)
 

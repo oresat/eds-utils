@@ -1,5 +1,7 @@
 '''Everything to write an eds/dcf as CANopenNode OD.[c/h] files'''
 
+import math as m
+
 from . import INDENT4, INDENT8, INDENT12
 from .. import ObjectType, DataType, AccessType
 from ..eds import EDS
@@ -24,8 +26,7 @@ DATA_TYPE_C_TYPES = {
     DataType.REAL32: 'float',
     DataType.VISIBLE_STRING: 'char',
     DataType.OCTET_STRING: 'uint8_t',
-    DataType.UNICODE_STRING: 'char',
-    DataType.DOMAIN: '0',
+    DataType.UNICODE_STRING: 'uint16_t',
     DataType.REAL64: 'double',
     DataType.INTEGER64: 'int64_t',
     DataType.UNSIGNED64: 'uint64_t',
@@ -115,73 +116,96 @@ def attr_lines(eds: EDS, index: int) -> list:
     if obj.object_type == ObjectType.VAR:
         default_value = remove_node_id(obj.default_value)
         line = f'{INDENT4}.x{index:X}_{camel_case(obj.parameter_name)} = '
+
         if obj.data_type == DataType.VISIBLE_STRING:
             line += f'"{default_value}",'
         elif obj.data_type == DataType.OCTET_STRING:
             line += '{'
-            value = obj.default_value
-            length = len(value)
-            if length < 16:
-                value = '0' * (16 - length) + value
-            for i in range(0, len(value), 2):
-                line += f'0x{value[i]}{value[i+1]}, '
-            line = line[:-2]
+            value = obj.default_value.replace('  ', ' ')
+            for i in value.split(' '):
+                line += f'0x{i}, '
+            line = line[:-2]  # remove last ', '
+            line += '},'
+        elif obj.data_type == DataType.UNICODE_STRING:
+            line += '{'
+            for i in obj.default_value:
+                line += f'0x{ord(i):04X}, '
+            line += f'0x{0:04X}'  # add the '\0'
             line += '},'
         else:
             line += f'{default_value},'
+
         lines.append(line)
     elif obj.object_type == ObjectType.ARRAY:
         name = camel_case(obj.parameter_name)
         lines.append(f'{INDENT4}.x{index:X}_{name}_sub0 = {obj[0].default_value},')
         line = f'{INDENT4}.x{index:X}_{name} = ' + '{'
+
         for i in obj.subindexes[1:]:
             default_value = remove_node_id(obj[i].default_value)
+
             if obj[i].data_type == DataType.VISIBLE_STRING:
                 line += f'"{default_value}", '
             elif obj[i].data_type == DataType.OCTET_STRING:
-                length = len(default_value)
-                if length < 16:
-                    value = '0' * (16 - length) + default_value
                 line += '{'
-                for i in range(0, len(value), 2):
-                    line += f'0x{value[i]}{value[i+1]}, '
+                value = obj[i].default_value.replace('  ', ' ')
+                for i in value.split(' '):
+                    line += f'0x{i}, '
                 line = line[:-2]  # remove trailing ', '
                 line += '}, '
+            elif obj[i].data_type == DataType.UNICODE_STRING:
+                line += '{'
+                for i in obj[i].default_value:
+                    line += f'0x{ord(i):04X}, '
+                line += f'0x{0:04X}'  # add the '\0'
+                line += '},'
             else:
                 line += f'{default_value}, '
-            # line += f'{default_value}, '
+
         line = line[:-2]  # remove trailing ', '
         line += '},'
+
         if index not in _SKIP_INDEXES:
             lines.append(line)
-    else:
+    else:  # ObjectType.Record
         lines.append(f'{INDENT4}.x{index:X}_{camel_case(obj.parameter_name)} = ' + '{')
+
         for i in obj.subindexes:
             name = camel_case(obj[i].parameter_name)
             default_value = remove_node_id(obj[i].default_value)
+
             if obj[i].data_type == DataType.VISIBLE_STRING:
                 lines.append(f'{INDENT8}.{name} = "{default_value}",')
             elif obj[i].data_type == DataType.OCTET_STRING:
-                value = obj[i].default_value
-                length = len(value)
-                if length < 16:
-                    value = '0' * (16 - length) + value
-                for i in range(0, len(value), 2):
-                    line += f'0x{value[i]}{value[i+1]}, '
+                value = obj[i].default_value.replace('  ', ' ')
+                for i in value.split(' '):
+                    line += f'0x{i}, '
                 line = line[:-2]  # remove trailing ', '
+                lines.append(line)
+            elif obj[i].data_type == DataType.UNICODE_STRING:
+                line += '{'
+                for i in obj.default_value:
+                    line += f'0x{ord(i):04X}, '
+                line += f'0x{0:04X}'  # add the '\0'
+                line += '},'
                 lines.append(line)
             else:
                 lines.append(f'{INDENT8}.{name} = {default_value},')
+
         lines.append(INDENT4 + '},')
 
     return lines
 
 
 def _var_data_type_len(var: Variable) -> int:
-    '''Get the length of the variable's data'''
+    '''Get the length of the variable's data in bytes'''
 
-    if var.data_type in DATA_TYPE_STR:
-        length = len(var.default_value)
+    if var.data_type == DataType.VISIBLE_STRING:
+        length = len(var.default_value)  # char
+    elif var.data_type == DataType.OCTET_STRING:
+        length = len(var.default_value.replace(' ', '')) // 2
+    elif var.data_type == DataType.UNICODE_STRING:
+        length = len(var.default_value) * 2  # uint16_t
     else:
         length = var.data_type.size // 8
 
@@ -222,31 +246,34 @@ def obj_lines(eds: EDS, index) -> list:
     obj = eds[index]
     name = camel_case(obj.parameter_name)
     lines.append(f'{INDENT4}.o_{index:X}_{name} = ' + '{')
+
     if obj.object_type == ObjectType.VAR:
         st_loc = obj.storage_location
-        if obj.data_type == DataType.VISIBLE_STRING:
+
+        if obj.data_type == DataType.DOMAIN:
+            lines.append(f'{INDENT8}.dataOrig = NULL,')
+        elif obj.data_type in DATA_TYPE_STR or obj.data_type == DataType.OCTET_STRING:
             lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
-            lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj)},')
-            lines.append(f'{INDENT8}.dataLength = {_var_data_type_len(obj)}')
-        elif obj.data_type == DataType.OCTET_STRING:
-            lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
-            lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj)},')
-            lines.append(f'{INDENT8}.dataLength = {_var_data_type_len(obj) // 2}')
         else:
             lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name},')
-            lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj)},')
-            lines.append(f'{INDENT8}.dataLength = {_var_data_type_len(obj)}')
+
+        lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj)},')
+        lines.append(f'{INDENT8}.dataLength = {_var_data_type_len(obj)}')
     elif obj.object_type == ObjectType.ARRAY:
         st_loc = obj.storage_location
+
         lines.append(f'{INDENT8}.dataOrig0 = &OD_{st_loc}.x{index:X}_{name}_sub0,')
+
         if index in _SKIP_INDEXES:
             lines.append(f'{INDENT8}.dataOrig = NULL,')
         elif obj.data_type == DataType.OCTET_STRING:
             lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0][0],')
         else:
             lines.append(f'{INDENT8}.dataOrig = &OD_{st_loc}.x{index:X}_{name}[0],')
+
         lines.append(f'{INDENT8}.attribute0 = ODA_SDO_R,')
         lines.append(f'{INDENT8}.attribute = {_var_attr_flags(obj[1])},')
+
         length = _var_data_type_len(obj[1])
         lines.append(f'{INDENT8}.dataElementLength = {length},')
         if length > 0 and length <= 8:
@@ -261,6 +288,7 @@ def obj_lines(eds: EDS, index) -> list:
             lines.append(f'{INDENT12}.attribute = {_var_attr_flags(obj[i])},')
             lines.append(f'{INDENT12}.dataLength = {_var_data_type_len(obj[i])}')
             lines.append(INDENT8 + '},')
+
     lines.append(INDENT4 + '},')
 
     return lines
@@ -364,11 +392,14 @@ def _canopennode_h_lines(eds: EDS, index: int) -> list:
 
     if obj.object_type == ObjectType.VAR:
         c_name = DATA_TYPE_C_TYPES[obj.data_type]
-        if obj.data_type == DataType.VISIBLE_STRING:
+
+        if obj.data_type == DataType.DOMAIN:
+            pass  # skip domains
+        elif obj.data_type in DATA_TYPE_STR:
             length = len(obj.default_value) + 1  # add 1 for '\0'
             lines.append(f'{INDENT4}{c_name} x{index:X}_{name}[{length}];')
         elif obj.data_type == DataType.OCTET_STRING:
-            length = len(obj.default_value) // 2  # aka number of uint8s
+            length = len(obj.default_value.replace(' ', '')) // 2  # aka number of uint8s
             lines.append(f'{INDENT4}{c_name} x{index:X}_{name}[{length}];')
         else:
             lines.append(f'{INDENT4}{c_name} x{index:X}_{name};')
@@ -376,25 +407,32 @@ def _canopennode_h_lines(eds: EDS, index: int) -> list:
         c_name = DATA_TYPE_C_TYPES[obj.data_type]
         length = f'OD_CNT_ARR_{index:X}'
         lines.append(f'{INDENT4}uint8_t x{index:X}_{name}_sub0;')
+
         if index in _SKIP_INDEXES:
             pass
         elif obj.data_type == DataType.OCTET_STRING:
-            lines.append(f'{INDENT4}{c_name} x{index:X}_{name}[{length}][32];')
+            sub_length = m.ceil(len(obj[1].default_value.replace(' ', '')) / 2)
+            lines.append(f'{INDENT4}{c_name} x{index:X}_{name}[{length}][{sub_length}];')
         else:
             lines.append(f'{INDENT4}{c_name} x{index:X}_{name}[{length}];')
     else:
         lines.append(INDENT4 + 'struct {')
         for i in obj.subindexes:
-            c_name = DATA_TYPE_C_TYPES[obj[i].data_type]
+            data_type = obj[i].data_type
+            c_name = DATA_TYPE_C_TYPES[data_type]
             sub_name = camel_case(obj[i].parameter_name)
-            if obj[i].data_type == DataType.VISIBLE_STRING:
+
+            if data_type == DataType.DOMAIN:
+                continue  # skip domains
+            elif data_type in DATA_TYPE_STR:
                 length = len(obj[i].default_value) + 1  # add 1 for '\0'
                 lines.append(f'{INDENT8}{c_name} {sub_name}[{length}];')
-            elif obj[i].data_type == DataType.OCTET_STRING:
-                length = len(obj[i].default_value) + 1  # add 1 for '\0'
-                lines.append(f'{INDENT4}{c_name} x{index:X}_{name}[{length}][32];')
+            elif data_type == DataType.OCTET_STRING:
+                sub_length = m.ceil(len(obj[1].default_value.replace(' ', '')) / 2)
+                lines.append(f'{INDENT4}{c_name} x{index:X}_{name}[{length}][{sub_length}];')
             else:
                 lines.append(f'{INDENT8}{c_name} {sub_name};')
+
         lines.append(INDENT4 + '}' + f' x{index:X}_{name};')
 
     return lines

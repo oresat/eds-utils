@@ -86,7 +86,7 @@ class Record:
         elif subindex in self._data:  # add subindex
             raise ValueError('Subindex already exists')
         else:
-            variable.storage_location = self._data.storage_location
+            variable.storage_location = self.storage_location
             self._data[subindex] = variable
 
             # update record size subindex
@@ -164,7 +164,7 @@ class Array(Record):
         elif self._data_type and variable.data_type != self._data_type:
             raise ValueError('Variable\'s data type does not match array\'s data type')
         else:
-            variable.storage_location = self._data.storage_location
+            variable.storage_location = self.storage_location
             self._data[subindex] = variable
 
             # set the data_type if not set

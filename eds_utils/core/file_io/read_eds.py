@@ -284,12 +284,29 @@ def _read_variable(header: str, lines: dict, comments: str) -> (Variable, list):
         access_type = lines['AccessType']
         var.access_type = AccessType.from_str(access_type)
     except KeyError:
-        errors.append(f'AccessType was missing from {header}')
+        errors.append(f'{_LEVEL}: AccessType was missing from {header}')
     except ValueError:
-        errors.append(f'AccessType value of {access_type} is invalid in {header}')
+        errors.append(f'{_LEVEL}: AccessType value of {access_type} is invalid in {header}')
+
+    list_data_types = [DataType.VISIBLE_STRING, DataType.OCTET_STRING, DataType.UNICODE_STRING]
 
     if 'DefaultValue' in lines:  # optional
-        var.default_value = lines['DefaultValue']
+        if var.data_type == DataType.OCTET_STRING:
+            value = lines['DefaultValue']
+            value_ns = value.replace(' ', '')
+
+            # format OCTET_STRING's default value
+            if re.match(r'^([\da-fA-F]{2} *)*$', value):
+                tmp = [value_ns[i: i + 2] for i in range(0, len(value_ns), 2)]
+                var.default_value = ' '.join(tmp)
+            else:
+                errors.append(f'Octect\'s DefaultValue value of {value} is invalid in {header}')
+        else:
+            var.default_value = lines['DefaultValue']
+    elif var.data_type in list_data_types:
+        var.default_value = ''
+    else:
+        var.default_value = '0'
 
     try:
         pdo_mapping = lines['PDOMapping']
