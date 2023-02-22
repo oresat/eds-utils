@@ -42,7 +42,8 @@ class AddObjectDialog(Gtk.Dialog):
         label = Gtk.Label(label='Index:')
         label.set_halign(Gtk.Align.START)
         self._index_entry = Gtk.Entry()
-        self._index_entry.set_text('0x1000')
+        max_index = eds.indexes[-1]
+        self._index_entry.set_text(f'0x{max_index + 1:04X}')
         grid.attach(label, column=0, row=1, width=1, height=1)
         grid.attach(self._index_entry, column=1, row=1, width=1, height=1)
 

@@ -311,7 +311,7 @@ class ObjectDictionaryPage(Page):
             self._eds[new_index] = obj
         else:
             obj = Variable()
-            if new_obj_type == ObjectType.ARRAY:
+            if isinstance(self._eds[new_index], Array):
                 # all data types in arrays must match
                 obj.data_type = self._eds[new_index].data_type
             self._eds[new_index][new_subindex] = obj

@@ -167,7 +167,7 @@ def _variable_lines(variable: Variable, index: int, subindex=None, dcf=False,
     if variable.default_value:  # optional
         if variable.data_type == DataType.OCTET_STRING:
             value_ns = variable.default_value.replace(' ', '')
-            tmp = [value_ns[i: i + 2] for i in range(0, len(value_ns), 2)]
+            tmp = ' '.join([value_ns[i: i + 2] for i in range(0, len(value_ns), 2)])
             lines.append(f'DefaultValue={tmp}')
         else:
             lines.append(f'DefaultValue={variable.default_value}')

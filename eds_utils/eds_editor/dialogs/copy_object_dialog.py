@@ -73,8 +73,6 @@ class CopyObjectDialog(Gtk.Dialog):
         self.subindex_entry = Gtk.Entry()
         if self.subindex is not None:
             self.subindex_entry.set_text(f'0x{self.subindex:02X}')
-        else:
-            self.subindex_entry.set_text(f'0x{0:02X}')
         grid.attach(label, column=2, row=1, width=1, height=1)
         grid.attach(self.subindex_entry, column=3, row=1, width=1, height=1)
 

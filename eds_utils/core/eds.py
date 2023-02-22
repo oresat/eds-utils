@@ -350,9 +350,9 @@ class EDS:
                     move: bool = False):
         '''Move or copy an object in the OD'''
 
-        if index not in self._data:
+        if index not in self.indexes:
             raise EDSError(f'no object exists at index 0x{index:X}')
-        if subindex is not None and subindex not in self._data[index]:
+        if subindex is not None and subindex not in self._data[index].subindexes:
             raise EDSError(f'no object exists at index 0x{index:X} subindex 0x{subindex:02X}')
 
         if new_subindex is None and new_index in self._data:
@@ -360,7 +360,7 @@ class EDS:
         if new_subindex is not None:
             if isinstance(self._data[new_index], Variable):
                 raise EDSError('cannot move an object to a subindex of an Variable')
-            if new_subindex in self._data[new_index]:
+            if new_subindex in self._data[new_index].subindexes:
                 raise EDSError(f'object already exist at index 0x{new_index:X} subindex '
                                f'0x{new_subindex:02X}')
 
@@ -372,10 +372,10 @@ class EDS:
         if new_subindex is None:
             self._data[new_index] = obj
         else:
-            self._eds[new_index][new_subindex] = obj
+            self._data[new_index][new_subindex] = obj
 
         if move:
-            if new_subindex is None:
+            if subindex is None:
                 del self._data[index]
             else:
-                del self._eds[index][subindex]
+                del self._data[index][subindex]
