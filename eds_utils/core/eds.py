@@ -343,7 +343,7 @@ class EDS:
 
     def add_storage_location(self, storage_location: str):
 
-        if storage_location not in self._storage_locations:
+        if storage_location not in self._storage_locations and storage_location != '':
             self._storage_locations.append(storage_location)
 
     def copy_object(self, index: int, subindex: int, new_index: int, new_subindex: int,

@@ -106,7 +106,7 @@ def read_eds(file_path: str) -> (EDS, list):
                 obj, err = _read_record(header, raw, comments)
 
             sl = obj.storage_location
-            if sl not in eds.storage_locations:
+            if sl not in eds.storage_locations and sl != '':
                 eds.add_storage_location(sl)
 
             errors += err
@@ -129,7 +129,7 @@ def read_eds(file_path: str) -> (EDS, list):
             if eds[index][0].storage_location == '':
                 eds[index][0].storage_location = sl
 
-            if sl not in eds.storage_locations:
+            if sl not in eds.storage_locations and sl != '':
                 eds.add_storage_location(sl)
 
             index = int(header[1:5], 16)

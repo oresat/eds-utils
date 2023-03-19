@@ -121,6 +121,8 @@ class ObjectGrid(Gtk.Grid):
             self._obj_storage_loc.set_model(str_list)
             self._obj_storage_loc.set_selected(0)
             self._obj_storage_loc.connect('activate', self._on_obj_storage_loc_changed)
+        else:
+            self._obj_storage_loc.hide()
         self.attach(label, column=0, row=11, width=1, height=1)
         self.attach(self._obj_storage_loc, column=1, row=11, width=1, height=1)
 
@@ -141,6 +143,8 @@ class ObjectGrid(Gtk.Grid):
         elif self._eds[index].object_type == ObjectType.ARRAY:
             self._obj_storage_loc.set_sensitive(False)
             self._obj_data_type.set_sensitive(False)
+        else:
+            self._obj_storage_loc.set_sensitive(False)
 
         if self._selected_obj.object_type == ObjectType.ARRAY:
             self._obj_data_type.show()
