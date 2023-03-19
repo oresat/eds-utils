@@ -177,6 +177,8 @@ class EDS:
         elif index not in self._data:
             raise EDSError(f'cannot insert subindex 0x{subindex:X} for index 0x{index:X}, as that '
                            'index does not exist')
+        elif isinstance(self._data[index], Variable):
+            raise EDSError('cannot insert a subindex into a Variable')
         elif subindex in self._data[index].subindexes:
             raise EDSError(f'subindex 0x{subindex:X} already exist for index 0x{index:X}')
         elif not isinstance(item, Variable):

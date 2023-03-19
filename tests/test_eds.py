@@ -1,7 +1,7 @@
 import unittest
 
 from eds_utils.core.objects import Variable, Record
-from eds_utils.core.eds import EDS
+from eds_utils.core.eds import EDS, EDSError
 
 
 class TestEDS(unittest.TestCase):
@@ -14,12 +14,12 @@ class TestEDS(unittest.TestCase):
         self.assertEqual(len(eds.indexes), 1)
 
         # index already exist
-        with self.assertRaises(ValueError):
+        with self.assertRaises(EDSError):
             eds.insert(0x8000, None, Variable())
         self.assertEqual(len(eds.indexes), 1)
 
         # cannont insert an var as subindex to another var
-        with self.assertRaises(TypeError):
+        with self.assertRaises(EDSError):
             eds.insert(0x8000, 1, Variable())
         self.assertEqual(len(eds.indexes), 1)
 
@@ -32,7 +32,7 @@ class TestEDS(unittest.TestCase):
         self.assertEqual(len(eds.indexes), 2)
 
         # try to re-insert var again
-        with self.assertRaises(ValueError):
+        with self.assertRaises(EDSError):
             eds.insert(0x8100, 1, Variable())
         self.assertEqual(len(eds.indexes), 2)
 
