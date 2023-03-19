@@ -51,7 +51,7 @@ class ObjectGrid(Gtk.Grid):
         access_type_list = Gtk.StringList.new(strings=[i.name for i in AccessType])
         self._obj_access_type.set_model(access_type_list)
         self._obj_access_type.set_selected(0)
-        self._obj_access_type.connect('activate', self._on_obj_access_type_changed)
+        self._obj_access_type.connect('notify::selected-item', self._on_obj_access_type_changed)
         self.attach(label, column=2, row=2, width=1, height=1)
         self.attach(self._obj_access_type, column=3, row=2, width=1, height=1)
 
@@ -74,7 +74,7 @@ class ObjectGrid(Gtk.Grid):
         data_type_list = Gtk.StringList.new(strings=[i.name for i in DataType])
         self._obj_data_type.set_model(data_type_list)
         self._obj_data_type.set_selected(0)
-        self._obj_data_type.connect('activate', self._on_obj_data_type_changed)
+        self._obj_data_type.connect('notify::selected-item', self._on_obj_data_type_changed)
         self.attach(label, column=0, row=8, width=1, height=1)
         self.attach(self._obj_data_type, column=1, row=8, width=1, height=1)
 
@@ -120,8 +120,10 @@ class ObjectGrid(Gtk.Grid):
             str_list = Gtk.StringList.new(strings=self._eds.storage_locations)
             self._obj_storage_loc.set_model(str_list)
             self._obj_storage_loc.set_selected(0)
-            self._obj_storage_loc.connect('activate', self._on_obj_storage_loc_changed)
+            self._obj_storage_loc.connect('notify::selected-item',
+                                          self._on_obj_storage_loc_changed)
         else:
+            label.hide()
             self._obj_storage_loc.hide()
         self.attach(label, column=0, row=11, width=1, height=1)
         self.attach(self._obj_storage_loc, column=1, row=11, width=1, height=1)
@@ -210,8 +212,8 @@ class ObjectGrid(Gtk.Grid):
         if self._selected_obj:
             self._selected_obj.denotation = entry.get_text()
 
-    def _on_obj_access_type_changed(self, dropdown: Gtk.DropDown):
-        access_type = AccessType[dropdown.get_value()]
+    def _on_obj_access_type_changed(self, dropdown: Gtk.DropDown, flag: Gtk.StateFlags):
+        access_type = list(AccessType)[dropdown.get_selected()]
         if self._selected_obj:
             self._selected_obj.access_type = access_type
 
@@ -220,8 +222,9 @@ class ObjectGrid(Gtk.Grid):
         if self._selected_obj:
             self._selected_obj.comments = text
 
-    def _on_obj_data_type_changed(self, dropdown: Gtk.DropDown):
-        data_type = DataType[dropdown.get_value()]
+    def _on_obj_data_type_changed(self, dropdown: Gtk.DropDown, flag: Gtk.StateFlags):
+        data_type = list(DataType)[dropdown.get_selected()]
+        print('data change')
         if self._selected_obj:
             self._selected_obj.data_type = data_type
             if self._selected_obj.data_type in [DataType.VISIBLE_STRING, DataType.OCTET_STRING,
@@ -256,8 +259,8 @@ class ObjectGrid(Gtk.Grid):
         if self._selected_obj:
             self._selected_obj.high_limit = text
 
-    def _on_obj_storage_loc_changed(self, dropdown: Gtk.DropDown):
+    def _on_obj_storage_loc_changed(self, dropdown: Gtk.DropDown, flag: Gtk.StateFlags):
         if self._eds.storage_locations:
-            storage_location = self._eds.storage_locations[dropdown.get_value()]
+            storage_location = self._eds.storage_locations[dropdown.get_selected()]
             if self._selected_obj:
                 self._selected_obj.storage_location = storage_location
