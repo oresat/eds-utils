@@ -83,7 +83,7 @@ class ObjectGrid(Gtk.Grid):
         self._obj_pdo_mapping = Gtk.Switch()
         self._obj_pdo_mapping.set_halign(Gtk.Align.START)
         self._obj_pdo_mapping.set_valign(Gtk.Align.CENTER)
-        self._obj_pdo_mapping.connect('activate', self._on_obj_pdo_mapping_changed)
+        self._obj_pdo_mapping.connect('state-set', self._on_obj_pdo_mapping_changed)
         self.attach(label, column=2, row=8, width=1, height=1)
         self.attach(self._obj_pdo_mapping, column=3, row=8, width=1, height=1)
 
@@ -191,7 +191,7 @@ class ObjectGrid(Gtk.Grid):
             access_type = self._selected_obj.access_type
             self._obj_access_type.set_selected(list(AccessType).index(access_type))
             self._obj_default_value.set_text(self._selected_obj.default_value)
-            self._obj_pdo_mapping.set_state(self._selected_obj.pdo_mapping)
+            self._obj_pdo_mapping.set_active(self._selected_obj.pdo_mapping)
             self._obj_low_limit.set_text(self._selected_obj.low_limit)
             self._obj_high_limit.set_text(self._selected_obj.high_limit)
         elif self._selected_obj.object_type == ObjectType.ARRAY:
@@ -224,7 +224,6 @@ class ObjectGrid(Gtk.Grid):
 
     def _on_obj_data_type_changed(self, dropdown: Gtk.DropDown, flag: Gtk.StateFlags):
         data_type = list(DataType)[dropdown.get_selected()]
-        print('data change')
         if self._selected_obj:
             self._selected_obj.data_type = data_type
             if self._selected_obj.data_type in [DataType.VISIBLE_STRING, DataType.OCTET_STRING,
@@ -233,8 +232,7 @@ class ObjectGrid(Gtk.Grid):
             else:
                 self._obj_default_value_len_label.hide()
 
-    def _on_obj_pdo_mapping_changed(self, switch: Gtk.Switch):
-        state = switch.get_state()
+    def _on_obj_pdo_mapping_changed(self, switch: Gtk.Switch, state: bool):
         if self._selected_obj:
             self._selected_obj.pdo_mapping = state
 
@@ -242,12 +240,12 @@ class ObjectGrid(Gtk.Grid):
         text = entry.get_text()
         if self._selected_obj:
             self._selected_obj.default_value = text
+            length = 0
             if self._selected_obj.data_type in [DataType.VISIBLE_STRING, DataType.UNICODE_STRING]:
                 length = len(text)
-                self._obj_default_value_len_label.set_text(f'(Length: {length + 1})')
             elif self._selected_obj.data_type == DataType.OCTET_STRING:
                 length = m.ceil(len(text.replace(' ', '')) / 2)
-                self._obj_default_value_len_label.set_text(f'(Length: {length})')
+            self._obj_default_value_len_label.set_text(f'(Length: {length})')
 
     def _on_obj_low_limit_changed(self, entry: Gtk.Entry):
         text = entry.get_text()
