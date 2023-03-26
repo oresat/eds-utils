@@ -105,7 +105,8 @@ class AppWindow(Gtk.ApplicationWindow):
 
         response = dialog.get_response()
         if response == TmpResponse.USE_TMP:
-            self._open_eds(dialog.file_path + '.tmp')
+            os.rename(dialog.file_path + '.tmp', dialog.file_path)
+            self._open_eds(dialog.file_path)
         elif response == TmpResponse.DONT_USE_TMP:
             self._open_eds(dialog.file_path)
         else:
