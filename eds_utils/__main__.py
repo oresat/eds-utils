@@ -8,6 +8,7 @@ from .eds2md import eds2md, EDS2MD_DESCRIPTION
 from .eds2rst import eds2rst, EDS2RST_DESCRIPTION
 from .eds2c import eds2c, EDS2C_DESCRIPTION
 from .eds_autofix import eds_autofix, EDS_AUTOFIX_DESCRIPTION
+from .eds_merge import eds_merge, EDS_MERGE_DESCRIPTION
 
 
 PROGRAMS = {
@@ -18,6 +19,7 @@ PROGRAMS = {
     'eds2rst     ': EDS2RST_DESCRIPTION,
     'eds2c       ': EDS2C_DESCRIPTION,
     'eds-autofix ': EDS_AUTOFIX_DESCRIPTION,
+    'eds-merge   ': EDS_MERGE_DESCRIPTION,
 }
 
 
@@ -48,5 +50,7 @@ if __name__ == "__main__":
         eds2c(sys.argv[2:])
     elif sys.argv[1] == 'eds-autofix':
         eds_autofix(sys.argv[2:])
+    elif sys.argv[1] == 'eds-merge':
+        eds_merge(sys.argv[2:])
     else:
         eds_utils()

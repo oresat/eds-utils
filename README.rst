@@ -14,6 +14,7 @@ Utilities
 - **eds2md:** CLI to convert a EDS / DCF file to a md (Markdown) file.
 - **eds2rst:** CLI to convert a EDS / DCF file to a rst (reStructuredText) file.
 - **eds-autofix:** CLI to autofix errors in EDS / DCF files.
+- **eds-merge:** CLI to merge two EDS / DCF files.
 
 
 How To Install
