@@ -32,6 +32,9 @@ class ObjectGrid(Gtk.Grid):
         self._obj_denotation = Gtk.Entry()
         self._obj_denotation.set_max_length(241)
         self._obj_denotation.connect('changed', self._on_obj_denotation_changed)
+        if self._eds.file_info.file_name.endswith('.eds'):
+            label.hide()
+            self._obj_denotation.hide()
         self.attach(label, column=0, row=1, width=1, height=1)
         self.attach(self._obj_denotation, column=1, row=1, width=3, height=1)
 
@@ -140,13 +143,13 @@ class ObjectGrid(Gtk.Grid):
         self._obj_storage_loc.set_sensitive(True)
         self._obj_default_value_len_label.hide()
 
-        if subindex is None:
-            self._obj_data_type.set_sensitive(False)
-        elif self._eds[index].object_type == ObjectType.ARRAY:
+        # data_type set sensitivity
+        if self._eds[index].object_type in [ObjectType.ARRAY, ObjectType.RECORD]:
+            if subindex == 0:
+                self._obj_data_type.set_sensitive(False)
             self._obj_storage_loc.set_sensitive(False)
+        if self._eds[index].object_type == ObjectType.ARRAY:
             self._obj_data_type.set_sensitive(False)
-        else:
-            self._obj_storage_loc.set_sensitive(False)
 
         if self._selected_obj.object_type == ObjectType.ARRAY:
             self._obj_data_type.show()
