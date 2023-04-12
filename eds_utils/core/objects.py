@@ -89,8 +89,11 @@ class Record:
             variable.storage_location = self.storage_location
             self._data[subindex] = variable
 
-            # update record size subindex
-            self._data[0].default_value = f'0x{len(self._data) - 1:02X}'
+            # make sure the subindexes are ordered
+            self._data = dict(sorted(self._data.items()))
+
+            # update record highest subindex
+            self._data[0].default_value = f'0x{list(self._data)[-1]:02X}'
 
     def __delitem__(self, subindex: int):
         '''Remove a subindex from the record'''
@@ -109,7 +112,7 @@ class Record:
     def subindexes(self) -> list:
         '''Get the list of subindexes'''
 
-        return sorted(self._data.keys())
+        return self._data.keys()
 
     @property
     def storage_location(self) -> str:
@@ -171,8 +174,11 @@ class Array(Record):
             if not self._data_type:
                 self._data_type = variable.data_type
 
-            # update record size subindex
-            self._data[0].default_value = f'0x{len(self._data) - 1:02X}'
+            # make sure the subindexes are ordered
+            self._data = dict(sorted(self._data.items()))
+
+            # update record highest subindex
+            self._data[0].default_value = f'0x{list(self._data)[-1]:02X}'
 
     @property
     def data_type(self) -> DataType:

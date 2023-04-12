@@ -164,6 +164,8 @@ class EDS:
 
         self._data[index] = item
 
+        self._data = dict(sorted(self._data.items()))
+
     def __delitem__(self, index: int):
         del self._data[index]
 
