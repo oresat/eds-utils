@@ -28,6 +28,7 @@ def write_eds(eds: EDS, file_path='', dcf=False):
     if not dcf and file_path.endswith('.dcf'):
         dcf = True
     elif dcf and file_path.endswith('.eds'):  # force eds to dcf
+        eds.file_info.last_eds = basename(file_path)
         file_path = splitext(file_path)[0] + '.dcf'
 
     # file info seciton
@@ -35,6 +36,8 @@ def write_eds(eds: EDS, file_path='', dcf=False):
     lines.append(f'FileName={basename(file_path)}')
     lines.append(f'FileVersion={eds.file_info.file_version}')
     lines.append(f'FileRevision={eds.file_info.file_revision}')
+    if dcf:
+        lines.append(f'LastEDS={eds.file_info.last_eds}')
     lines.append(f'EDSVersion={eds.file_info.eds_version}')
     lines.append(f'Description={eds.file_info.description}')
     lines.append('CreationTime=' + eds.file_info.creation_dt.strftime('%I:%M%p'))

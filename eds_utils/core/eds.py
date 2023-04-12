@@ -16,6 +16,7 @@ class FileInfo:
     file_name: str = 'new_file.eds'
     file_version: int = 0
     file_revision: int = 0
+    last_eds: int = ''  # DCF only
     eds_version: str = '4.0'
     description: str = ''
     creation_dt: datetime = datetime.now()

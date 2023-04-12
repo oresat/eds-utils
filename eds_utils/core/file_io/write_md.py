@@ -37,6 +37,8 @@ def write_md(eds: EDS, file_path='', dcf=False):
     lines.append(f'File Name|{basename(eds.file_info.file_name)}')
     lines.append(f'File Version|{eds.file_info.file_version}')
     lines.append(f'File Revision|{eds.file_info.file_revision}')
+    if dcf:
+        lines.append(f'Last EDS|{eds.file_info.last_eds}')
     lines.append(f'EDS Version|{eds.file_info.eds_version}')
     lines.append(f'Description|{eds.file_info.description}')
     lines.append('Creation Time|' + eds.file_info.creation_dt.strftime('%I:%M%p'))

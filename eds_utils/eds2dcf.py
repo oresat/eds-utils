@@ -45,4 +45,6 @@ def eds2dcf(sys_args=None):
     if args.output:
         write_eds(eds, file_path=args.output, dcf=True)
     else:
-        write_eds(eds, file_path=os.path.dirname(os.path.abspath(args.filepath)), dcf=True)
+        path = os.path.dirname(os.path.abspath(args.filepath))
+        file_name = os.path.basename(args.filepath)
+        write_eds(eds, file_path=f'{path}/{file_name}', dcf=True)

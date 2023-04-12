@@ -42,6 +42,8 @@ def write_rst(eds: EDS, file_path='', dcf=False):
     lines.append(f'{INDENT3}"File Name", "{basename(eds.file_info.file_name)}"')
     lines.append(f'{INDENT3}"File Version", "{eds.file_info.file_version}"')
     lines.append(f'{INDENT3}"File Revision", "{eds.file_info.file_revision}"')
+    if dcf:
+        lines.append(f'{INDENT3}"Last EDS", "{eds.file_info.last_eds}"')
     lines.append(f'{INDENT3}"EDS Version", "{eds.file_info.eds_version}"')
     lines.append(f'{INDENT3}"Description", "{eds.file_info.description}"')
     time_str = eds.file_info.creation_dt.strftime('%I:%M%p')

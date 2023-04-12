@@ -457,6 +457,12 @@ def _read_file_info(header: str, lines: dict) -> (FileInfo, list):
     except ValueError as exc:
         errors.append(f'{_LEVEL}: {exc}')
 
+    if file_info.file_name.endswith('.dcf'):  # only in DCFs
+        try:
+            file_info.last_eds = lines['LastEDS']
+        except KeyError:
+            errors.append(f'{_LEVEL}: LastEDS was missing from {header}')
+
     try:
         file_info.eds_version = lines['EDSVersion']
     except KeyError:
