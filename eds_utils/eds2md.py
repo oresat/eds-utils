@@ -26,4 +26,6 @@ def eds2md(sys_args=None):
     if args.output:
         write_md(eds, file_path=args.output)
     else:
-        write_md(eds, file_path=os.path.dirname(os.path.abspath(args.filepath)))
+        path = os.path.dirname(os.path.abspath(args.filepath))
+        file_name = os.path.basename(args.filepath)[:-4] + '.md'
+        write_md(eds, file_path=f'{path}/{file_name}')
