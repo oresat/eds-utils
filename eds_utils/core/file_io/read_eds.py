@@ -288,7 +288,8 @@ def _read_variable(header: str, lines: dict, comments: str) -> (Variable, list):
     except ValueError:
         errors.append(f'{_LEVEL}: AccessType value of {access_type} is invalid in {header}')
 
-    list_data_types = [DataType.VISIBLE_STRING, DataType.OCTET_STRING, DataType.UNICODE_STRING]
+    list_data_types = [DataType.VISIBLE_STRING, DataType.OCTET_STRING, DataType.UNICODE_STRING,
+                       DataType.DOMAIN]
 
     if 'DefaultValue' in lines:  # optional
         if var.data_type == DataType.OCTET_STRING:

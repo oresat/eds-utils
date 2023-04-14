@@ -76,7 +76,7 @@ def write_eds(eds: EDS, file_path='', dcf=False):
         lines.append(f'NetNumber={eds.device_commissioning.net_number}')
         lines.append(f'NetworkName={eds.device_commissioning.network_name}')
         lines.append(f'CANopenManager={int(eds.device_commissioning.canopen_manager)}')
-        lines.append(f'LSS_SerialNumber={eds.device_commissioning.lss_serialnumber}')
+        lines.append(f'LSS_SerialNumber={int(eds.device_commissioning.lss_serialnumber)}')
         lines.append('')
 
     # TODO dummy usage

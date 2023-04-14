@@ -15,7 +15,7 @@ class Variable:
     data_type: DataType = DataType.UNSIGNED32
     low_limit: str = ''
     high_limit: str = ''
-    default_value: str = '0'
+    default_value: str = ''
     access_type: AccessType = AccessType.RW
     pdo_mapping: bool = False
     object_type: ObjectType = ObjectType.VAR
