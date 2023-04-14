@@ -33,7 +33,7 @@ class TestRecord(unittest.TestCase):
         # empty space
         rec[4] = Variable()
         self.assertEqual(len(rec), 4)
-        self.assertEqual(rec[0].default_value, '0x03')
+        self.assertEqual(rec[0].default_value, '0x04')
 
     def test_remove(self):
 
@@ -55,7 +55,7 @@ class TestRecord(unittest.TestCase):
 
         # remove a valid subindexes
         self.assertEqual(len(rec), 5)
-        self.assertEqual(rec[0].default_value, '0x04')
+        self.assertEqual(rec[0].default_value, '0x05')
         del rec[3]
         self.assertEqual(len(rec), 4)
         self.assertEqual(rec[0].default_value, '0x03')
@@ -94,7 +94,7 @@ class TestArray(unittest.TestCase):
         # add a var to an subindex
         arr[10] = Variable(data_type=DataType.UNSIGNED8)
         self.assertEqual(len(arr), 3)
-        self.assertEqual(arr[0].default_value, '0x02')
+        self.assertEqual(arr[0].default_value, '0x0A')
 
         for i in arr.subindexes:
             self.assertEqual(arr[i].data_type, arr.data_type)
