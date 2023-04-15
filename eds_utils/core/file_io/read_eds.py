@@ -632,7 +632,10 @@ def _read_device_commissioning(header: str, lines: dict) -> (DeviceCommissioning
         errors.append(f'{_LEVEL}: NodeName was missing from {header}')
 
     try:
-        temp = _read_int_value(header, lines, 'Baudrate')
+        try:
+            temp = _read_int_value(header, lines, 'Baudrate')
+        except Exception:
+            temp = _read_int_value(header, lines, 'BaudRate')
         if temp in BAUD_RATE:
             device_comm.baud_rate = temp
         else:

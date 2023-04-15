@@ -72,7 +72,7 @@ def write_eds(eds: EDS, file_path='', dcf=False):
         lines.append('[DeviceComissioning]')  # only one 'm' in header
         lines.append(f'NodeID=0x{eds.device_commissioning.node_id:X}')
         lines.append(f'NodeName={eds.device_commissioning.node_name}')
-        lines.append(f'Baudrate={eds.device_commissioning.baud_rate}')
+        lines.append(f'BaudRate={eds.device_commissioning.baud_rate}')
         lines.append(f'NetNumber={eds.device_commissioning.net_number}')
         lines.append(f'NetworkName={eds.device_commissioning.network_name}')
         lines.append(f'CANopenManager={int(eds.device_commissioning.canopen_manager)}')

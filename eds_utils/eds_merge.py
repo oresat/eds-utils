@@ -12,7 +12,7 @@ def eds_merge(sys_args=None):
     if sys_args is None:
         sys_args = sys.argv[1:]
 
-    parser = argparse.ArgumentParser(description=EDS_MERGE_DESCRIPTION, prog='eds_merge')
+    parser = argparse.ArgumentParser(description=EDS_MERGE_DESCRIPTION, prog='eds-merge')
     parser.add_argument('filepath1', metavar='FILEPATH1',
                         help='file path to EDS/DCF file to merge from')
     parser.add_argument('filepath2', metavar='FILEPATH2',
