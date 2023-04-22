@@ -39,14 +39,20 @@ def eds_merge(sys_args=None):
 
         index_obj = eds1[index]
 
-        if strategy == 'override' or index not in eds2.indexes:
+        if strategy == 'override' and index in eds2.indexes:
+            del eds2[index]
+        if index not in eds2.indexes:
             print(f'0x{index:04X}')
             eds2[index] = eds1[index]
+        if strategy == 'override':
+            continue  # no need to subindex after doing the full index
 
         if index_obj.object_type != ObjectType.VAR:
             for subindex in index_obj.subindexes:
-                if strategy == 'override' or subindex not in eds2[index].subindexes:
-                    print(f'0x{index:04X} sub 0x{index:02X}')
+                if subindex == 0:
+                    continue
+                if subindex not in eds2[index].subindexes:
+                    print(f'0x{index:04X} sub 0x{subindex:02X}')
                     eds2[index][subindex] = eds1[index][subindex]
 
     # when merging an EDS into a DCF, update the LastEDS field
