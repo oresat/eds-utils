@@ -1,6 +1,7 @@
 from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Dict, List
+from copy import deepcopy
 
 from . import DataType
 from .objects import Variable, Record
@@ -301,7 +302,7 @@ class EDS:
     def indexes(self) -> List[int]:
         '''The list of indexes in the OD'''
 
-        return sorted(self._data.keys())
+        return list(self._data.keys())
 
     @property
     def mandatory_objects(self) -> List[int]:
@@ -375,9 +376,9 @@ class EDS:
         obj = self._data[index] if subindex is None else self._data[index][subindex]
 
         if new_subindex is None:
-            self._data[new_index] = obj
+            self._data[new_index] = deepcopy(obj)
         else:
-            self._data[new_index][new_subindex] = obj
+            self._data[new_index][new_subindex] = deepcopy(obj)
 
         if move:
             if subindex is None:

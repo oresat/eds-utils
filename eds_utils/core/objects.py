@@ -1,6 +1,7 @@
 '''All the object class for the object dictionary'''
 
 from dataclasses import dataclass
+from typing import List
 
 from . import DataType, AccessType, ObjectType
 
@@ -109,10 +110,10 @@ class Record:
         self._data[0].default_value = f'0x{len(self._data) - 1:02X}'
 
     @property
-    def subindexes(self) -> list:
+    def subindexes(self) -> List[int]:
         '''Get the list of subindexes'''
 
-        return self._data.keys()
+        return list(self._data.keys())
 
     @property
     def storage_location(self) -> str:
